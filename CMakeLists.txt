@@ -127,7 +127,9 @@ if(NOT MSVC AND Boost_USE_STATIC_LIBS)
 endif()
 
 add_executable(pramd
-	${PROJECT_SOURCE_DIR}/src/pramd.cpp)
+	${PROJECT_SOURCE_DIR}/src/pramd.cpp
+	${PROJECT_SOURCE_DIR}/src/configuration.cpp
+	${PROJECT_SOURCE_DIR}/src/data-service.cpp)
 
 # yarn rules for javascripts
 	
@@ -160,7 +162,7 @@ if(USE_RSRC)
 endif()
 
 target_include_directories(pramd PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR})
-target_link_libraries(pramd zeep::zeep std::filesystem Boost::program_options Boost::iostreams ${PQXX_LIBRARIES} ${PQ_LIBRARIES} ${REQUIRED_LIBRARIES})
+target_link_libraries(pramd mongo::mongocxx_static zeep::zeep std::filesystem Boost::program_options Boost::iostreams ${PQXX_LIBRARIES} ${PQ_LIBRARIES} ${REQUIRED_LIBRARIES})
 
 install(TARGETS pramd
     RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}

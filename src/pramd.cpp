@@ -1,7 +1,7 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  * 
- * Copyright (c) 2020 NKI/AVL, Netherlands Cancer Institute
+ * Copyright (c) 2022 NKI/AVL, Netherlands Cancer Institute
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,7 +33,6 @@
 #include <fstream>
 
 // #include <boost/algorithm/string.hpp>
-#include <boost/program_options.hpp>
 
 // #include <boost/uuid/uuid.hpp>
 // #include <boost/uuid/uuid_generators.hpp>
@@ -57,6 +56,9 @@
 // #include "user-service.hpp"
 // #include "run-service.hpp"
 // #include "prsm-db-connection.hpp"
+
+#include "configuration.hpp"
+#include "data-service.hpp"
 #include "revision.hpp"
 
 #include "mrsrc.hpp"
@@ -652,97 +654,26 @@ int a_main(int argc, char* const argv[])
 
 	int result = 0;
 
-	po::options_description visible(argv[0] + " [options] command"s);
-	visible.add_options()
-		("help,h",										"Display help message")
-		("verbose,v",									"Verbose output")
-		("no-daemon,F",									"Do not fork into background")
-		("config",		po::value<std::string>(),		"Specify the config file to use")
-		("version",										"Print version and exit")
-		;
-	
-	po::options_description config(APP_NAME R"( config file options)");
-	
-	config.add_options()
-		("pdb-redo-dir",	po::value<std::string>(),	"Directory containing PDB-REDO server data")
-		("runs-dir",		po::value<std::string>(),	"Directory containing PDB-REDO server run directories")
-		("address",			po::value<std::string>(),	"External address, default is 0.0.0.0")
-		("port",			po::value<uint16_t>(),		"Port to listen to, default is 10339")
-		("user,u",			po::value<std::string>(),	"User to run the daemon")
-		("db-host",			po::value<std::string>(),	"Database host")
-		("db-port",			po::value<std::string>(),	"Database port")
-		("db-dbname",		po::value<std::string>(),	"Database name")
-		("db-user",			po::value<std::string>(),	"Database user name")
-		("db-password",		po::value<std::string>(),	"Database password")
-		("admin",			po::value<std::string>(),	"Administrators, list of usernames separated by comma")
-		("secret",			po::value<std::string>(),	"Secret value, used in signing access tokens");
-
-	po::options_description hidden("hidden options");
-	hidden.add_options()
-		("command",			po::value<std::string>(),	"Command, one of start, stop, status or reload")
-		("debug,d",			po::value<int>(),			"Debug level (for even more verbose output)");
-
-	po::options_description cmdline_options;
-	cmdline_options.add(visible).add(config).add(hidden);
-
-	po::positional_options_description p;
-	p.add("command", 1);
-
-	po::variables_map vm;
-	po::store(po::command_line_parser(argc, argv).options(cmdline_options).positional(p).run(), vm);
-
-	fs::path configFile = APP_NAME ".conf";
-
-	if (not fs::exists(configFile) and getenv("HOME") != nullptr)
-		configFile = fs::path(getenv("HOME")) / ".config" / APP_NAME ".conf";
-
-	if (not fs::exists(configFile) and fs::exists("/etc" / configFile))
-		configFile = "/etc" / configFile;
-	
-	if (vm.count("config") != 0)
+	auto &config = configuration::init(argc, argv, []()
 	{
-		configFile = vm["config"].as<std::string>();
-		if (not fs::exists(configFile))
-			throw std::runtime_error("Specified config file does not seem to exist");
-	}
-	
-	if (fs::exists(configFile))
-	{
-		po::options_description config_options ;
-		config_options.add(config).add(hidden);
-
-		std::ifstream cfgFile(configFile);
-		if (cfgFile.is_open())
-			po::store(po::parse_config_file(cfgFile, config_options), vm);
-	}
-	
-	po::notify(vm);
-
-	// --------------------------------------------------------------------
-
-	if (vm.count("version"))
-	{
-		write_version_string(std::cout, vm.count("verbose"));
-		exit(0);
-	}
-
-	// --------------------------------------------------------------------
-
-	if (vm.count("help") or vm.count("command") == 0)
-	{
-		std::cerr << visible << std::endl
-			 << R"(
-Command should be either:
+		std::cerr << R"(Command should be either:
 
   start     start a new server
   stop      start a running server
   status    get the status of a running server
   reload    restart a running server with new options
 			 )" << std::endl;
-		exit(vm.count("help") ? 0 : 1);
+	});
+
+	// --------------------------------------------------------------------
+
+	if (config.get("command").empty())
+	{
+		std::cerr << "No command specified" << std::endl;
+		exit(1);
 	}
-	
-	if (vm.count("pdb-redo-dir") == 0)
+
+	if (not config.has("pdb-redo-dir"))
 	{
 		std::cerr << "Missing pdb-redo-dir option" << std::endl;
 		exit(1);
@@ -750,6 +681,9 @@ Command should be either:
 
 	try
 	{
+		auto &ds = data_service::instance();
+		ds.rescan();
+
 // 		char exePath[PATH_MAX + 1];
 // 		int r = readlink("/proc/self/exe", exePath, PATH_MAX);
 // 		if (r > 0)
