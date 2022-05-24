@@ -1,0 +1,9 @@
+node_modules
+docroot/scripts/
+docroot/fonts/
+.vscode/
+prsmd
+base64-tabel.sh
+**/__pycache__/
+prsmd.conf
+build/
