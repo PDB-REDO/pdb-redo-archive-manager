@@ -119,6 +119,15 @@ void data_service::rescan()
 
 	fs::path pdbRedoDir{config.get("pdb-redo-dir")};
 
+	size_t n = 0;
+	for (fs::directory_iterator l1(pdbRedoDir); l1 != fs::directory_iterator(); ++l1)
+	{
+		if (l1->is_directory() and l1->path().filename().string().length() == 2)
+			++n;
+	}
+
+	progress p0("scanning", n);
+
 	std::vector<fs::path> attics;
 
 	for (fs::directory_iterator l1(pdbRedoDir); l1 != fs::directory_iterator(); ++l1)
@@ -130,6 +139,8 @@ void data_service::rescan()
 		{
 			if (not l2->is_directory())
 				continue;
+
+			p0.message(l2->path().filename().string());
 
 			fs::path attic = l2->path() / "attic";
 
@@ -144,6 +155,8 @@ void data_service::rescan()
 				attics.emplace_back(l3->path());
 			}
 		}
+
+		p0.consumed(1);
 	}
 
 	// --------------------------------------------------------------------
