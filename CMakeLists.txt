@@ -121,6 +121,9 @@ find_package(zeep 5.1.4 REQUIRED)
 find_package(Boost COMPONENTS program_options iostreams REQUIRED)
 find_package(mongocxx REQUIRED)
 
+# As long as C++20 is not fully implemented (and used)
+find_package(date REQUIRED)
+
 if(NOT MSVC AND Boost_USE_STATIC_LIBS)
 	find_package(ZLIB REQUIRED)
 	list(APPEND REQUIRED_LIBRARIES ZLIB::ZLIB)
@@ -129,7 +132,8 @@ endif()
 add_executable(pramd
 	${PROJECT_SOURCE_DIR}/src/pramd.cpp
 	${PROJECT_SOURCE_DIR}/src/configuration.cpp
-	${PROJECT_SOURCE_DIR}/src/data-service.cpp)
+	${PROJECT_SOURCE_DIR}/src/data-service.cpp
+	${PROJECT_SOURCE_DIR}/src/utilities.cpp)
 
 # yarn rules for javascripts
 	
@@ -162,7 +166,7 @@ if(USE_RSRC)
 endif()
 
 target_include_directories(pramd PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR})
-target_link_libraries(pramd mongo::mongocxx_static zeep::zeep std::filesystem Boost::program_options Boost::iostreams ${PQXX_LIBRARIES} ${PQ_LIBRARIES} ${REQUIRED_LIBRARIES})
+target_link_libraries(pramd date::date mongo::mongocxx_static zeep::zeep std::filesystem Boost::program_options Boost::iostreams ${PQXX_LIBRARIES} ${PQ_LIBRARIES} ${REQUIRED_LIBRARIES})
 
 install(TARGETS pramd
     RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}

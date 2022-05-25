@@ -67,6 +67,7 @@ boost_program_options_configuration::boost_program_options_configuration(int arg
 		("verbose,v",									"Verbose output")
 		("no-daemon,F",									"Do not fork into background")
 		("config",		po::value<std::string>(),		"Specify the config file to use")
+
 		("version",										"Print version and exit")
 		;
 	
@@ -89,7 +90,7 @@ boost_program_options_configuration::boost_program_options_configuration(int arg
 
 	po::options_description hidden("hidden options");
 	hidden.add_options()
-		("command",			po::value<std::string>(),	"Command, one of start, stop, status or reload")
+		("command",			po::value<std::string>(),	"Command, one of rescan, start, stop, status or reload")
 		("debug,d",			po::value<int>(),			"Debug level (for even more verbose output)");
 
 	po::options_description cmdline_options;

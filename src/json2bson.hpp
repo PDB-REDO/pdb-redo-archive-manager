@@ -37,6 +37,9 @@ inline bsoncxx::document::value to_bson(const element &e)
 {
 	assert(e.type() == element::value_type::object);
 
+	if (e.type() != element::value_type::object)
+		throw std::invalid_argument("to_bson only works on elements of type 'object'");
+
 	using namespace bsoncxx;
 
 	using builder::basic::kvp;

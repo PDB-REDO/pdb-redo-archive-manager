@@ -667,7 +667,9 @@ int a_main(int argc, char* const argv[])
 
 	// --------------------------------------------------------------------
 
-	if (config.get("command").empty())
+	auto command = config.get("command");
+
+	if (command.empty())
 	{
 		std::cerr << "No command specified" << std::endl;
 		exit(1);
@@ -679,21 +681,14 @@ int a_main(int argc, char* const argv[])
 		exit(1);
 	}
 
+	if (command == "rescan")
+	{
+		data_service::instance().rescan();
+		return 0;
+	}
+
 	try
 	{
-		auto &ds = data_service::instance();
-		ds.rescan();
-
-// 		char exePath[PATH_MAX + 1];
-// 		int r = readlink("/proc/self/exe", exePath, PATH_MAX);
-// 		if (r > 0)
-// 		{
-// 			exePath[r] = 0;
-// 			gExePath = fs::weakly_canonical(exePath);
-// 		}
-		
-// 		if (not fs::exists(gExePath))
-// 			gExePath = fs::weakly_canonical(argv[0]);
 
 // 		std::vector<std::string> vConn;
 // 		for (std::string opt: { "db-host", "db-port", "db-dbname", "db-user", "db-password" })

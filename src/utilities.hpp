@@ -1,17 +1,17 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
- *
- * Copyright (c) 2022 NKI/AVL, Netherlands Cancer Institute
- *
+ * 
+ * Copyright (c) 2020 NKI/AVL, Netherlands Cancer Institute
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,44 +26,36 @@
 
 #pragma once
 
-#include <boost/program_options/variables_map.hpp>
+#include <functional>
 
-#include <zeep/json/element.hpp>
+// --------------------------------------------------------------------
 
-enum class FileType
-{
-	ZIP,
-	CIF,
-	MTZ,
-	DATA,
-	VERSIONS
-};
+void parallel_for(size_t N, std::function<void(size_t)>&& f);
 
-class data_service
+// --------------------------------------------------------------------
+
+int get_terminal_width();
+std::string get_user_name();
+
+// -----------------------------------------------------------------------
+
+class progress
 {
   public:
-	/// \brief Return the singleton instance of data_service, will init one if it doesn't exist.
-	static data_service &instance()
-	{
-		if (not s_instance)
-			s_instance.reset(new data_service);
-		return *s_instance;
-	}
+	progress(const std::string &action, int64_t max);
+	progress(const progress &) = delete;
+	progress &operator=(const progress &) = delete;
 
-	void rescan();
+	// indefinite version, shows ascii spinner
+	progress(const std::string &action);
 
-	/// \brief Return the file of type \a type for the hash \a hash returning a tuple containing the istream and name of the download file
-	std::tuple<std::istream *, std::string> get_file(const std::string &hash, FileType type);
+	virtual ~progress();
+
+	void consumed(int64_t n); // consumed is relative
+	void set(int64_t n); // progress is absolute
+
+	void message(const std::string &msg);
 
   private:
-
-	data_service();
-	data_service(const data_service &) = delete;
-	data_service &operator=(const data_service &) = delete;
-
-	std::filesystem::path get_path(const std::string &pdb_id, const std::string &hash, FileType type);
-
-	static std::unique_ptr<data_service> s_instance;
-
-	std::filesystem::path m_pdb_redo_dir;
+	struct progress_impl *m_impl;
 };
