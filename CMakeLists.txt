@@ -132,6 +132,12 @@ add_executable(pramd
 	${PROJECT_SOURCE_DIR}/src/data-service.cpp
 	${PROJECT_SOURCE_DIR}/src/utilities.cpp)
 
+target_compile_definitions(pramd
+	PRIVATE
+		$<$<CONFIG:Release>:NDEBUG>
+		$<$<CONFIG:Debug>:DEBUG>
+)
+
 # yarn rules for javascripts
 	
 set(webpack_input
@@ -159,6 +165,7 @@ add_custom_target(webpack DEPENDS ${webpack_output})
 if(USE_RSRC)
 	mrc_target_resources(pramd
 		${PROJECT_SOURCE_DIR}/docroot/
+		${PROJECT_SOURCE_DIR}/rsrc/configuration.json
 	)
 endif()
 

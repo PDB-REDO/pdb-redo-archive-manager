@@ -30,6 +30,8 @@
 
 #include <zeep/json/element.hpp>
 
+#include "utilities.hpp"
+
 enum class FileType
 {
 	ZIP,
@@ -52,8 +54,29 @@ class data_service
 
 	void rescan();
 
+	std::string get_pdb_id_for_hash(const std::string &hash) const;
+
 	/// \brief Return the file of type \a type for the hash \a hash returning a tuple containing the istream and name of the download file
-	std::tuple<std::istream *, std::string> get_file(const std::string &hash, FileType type);
+	///
+	/// \param hash	The hash for this PDB-REDO set of data
+	/// \param type The type of the requested file
+	/// \returns A tuple containing an std::istream pointer, a name and a content-type string
+	std::tuple<std::istream *, std::string, std::string> get_file(const std::string &hash, FileType type);
+
+	/// \brief Return the file of type \a type for the hash \a hash returning a tuple containing the istream and name of the download file
+	///
+	/// \param hash	The hash for this PDB-REDO set of data
+	/// \param type The type of the requested file
+	/// \returns A tuple containing an std::istream pointer, a name and a content-type string
+	std::tuple<std::istream *, std::string, std::string> get_file(const std::string &hash, const std::string &type)
+	{
+		if (icompare(type, "zip")) return get_file(hash, FileType::ZIP);
+		if (icompare(type, "cif")) return get_file(hash, FileType::CIF);
+		if (icompare(type, "mtz")) return get_file(hash, FileType::MTZ);
+		if (icompare(type, "data")) return get_file(hash, FileType::DATA);
+		if (icompare(type, "versions")) return get_file(hash, FileType::VERSIONS);
+		throw std::runtime_error("Invalid file type specified: " + type);
+	}
 
   private:
 

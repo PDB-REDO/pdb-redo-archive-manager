@@ -221,7 +221,7 @@ void data_service::rescan()
 
 // --------------------------------------------------------------------
 
-std::tuple<std::istream *, std::string> data_service::get_file(const std::string &hash, FileType type)
+std::tuple<std::istream *, std::string, std::string> data_service::get_file(const std::string &hash, FileType type)
 {
 	auto client = mongo_pool::instance().get();
 	auto coll = client->database("pdb_redo")["entries"];
@@ -236,20 +236,47 @@ std::tuple<std::istream *, std::string> data_service::get_file(const std::string
 	
 	std::string pdb_id{pdb_id_ele.get_utf8().operator core::v1::string_view()};
 
-	std::string file_name = pdb_id + '_' + hash;
+	fs::path path;
+	std::string file_name = pdb_id + '_' + hash + '_';
+	std::string content_type = "application/octet-stream";
 
 	std::unique_ptr<std::istream> is;
 
-	if (type == FileType::ZIP)	
-		;
-	else
+	switch (type)
 	{
-		auto path = get_path(pdb_id, hash, FileType::CIF);
-		is.reset(new std::ifstream(path));
-		file_name += path.filename().string();
+		case FileType::ZIP:
+			break;
+
+		case FileType::CIF:
+			content_type = "text/plain";
+			path = get_path(pdb_id, hash, FileType::CIF);
+			is.reset(new std::ifstream(path));
+			file_name += path.filename().string();
+			break;
+
+		case FileType::MTZ:
+			path = get_path(pdb_id, hash, FileType::MTZ);
+			is.reset(new std::ifstream(path));
+			file_name += path.filename().string();
+			break;
+
+		case FileType::DATA:
+			content_type = "application/json";
+			path = get_path(pdb_id, hash, FileType::DATA);
+			is.reset(new std::ifstream(path));
+			file_name += path.filename().string();
+			break;
+
+		case FileType::VERSIONS:
+			content_type = "application/json";
+			path = get_path(pdb_id, hash, FileType::VERSIONS);
+			is.reset(new std::ifstream(path));
+			file_name += path.filename().string();
+			break;
+
 	}
 
-	return { is.release(), file_name };
+	return { is.release(), file_name, content_type };
 }
 
 fs::path data_service::get_path(const std::string &pdb_id, const std::string &hash, FileType type)

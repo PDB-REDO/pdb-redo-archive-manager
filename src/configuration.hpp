@@ -26,14 +26,19 @@
 
 #pragma once
 
-#include <memory>
 #include <functional>
+#include <istream>
+#include <memory>
 
 /// \brief A class that stores global configuration information
+///
+/// Reason to create this class is to have global access to the
+/// parameters specified on the command line. And to have an option
+/// to remove the dependency on boost::program_options in the future.
 class configuration
 {
   public:
-	virtual ~configuration() = default;
+	~configuration();
 
 	using help_info_function_cb = std::function<void()>;
 
@@ -41,22 +46,23 @@ class configuration
 	static const configuration &instance();
 
 	/// \brief Initialize the configuration object using the global \a argc and \a argv parameters and optionally a call back \a help_cb that provides additional help.
-	static const configuration &init(int argc, char * const argv[], help_info_function_cb help_cb = {});
+	static const configuration &init(int argc, char * const argv[], std::istream &config_definition_file, help_info_function_cb help_cb = {});
 
-	/// \brief Get the option value for option name \a name, optionally specifying what the default should be using \a default_value
-	virtual std::string get(const char *name, std::string default_value = {}) const = 0;
+	/// \brief Get the value for option name \a name
+	template<typename T = std::string>
+	T get(const char* name) const;
 
 	/// \brief Return true if the name option \a name is specified
-	virtual bool has(const char *name) const = 0;
+	bool has(const char *name) const;
 
-  protected:
+  private:
 
-	configuration(int argc, char * const argv[], help_info_function_cb help_cb);
+	configuration(int argc, char * const argv[], std::istream &config_definition_file, help_info_function_cb help_cb);
 
 	configuration(const configuration &) = delete;
 	configuration& operator=(const configuration &) = delete;
 
 	static std::unique_ptr<configuration> s_instance;
 
-	help_info_function_cb m_help_cb;
+	class configuration_impl *m_impl;
 };

@@ -30,6 +30,18 @@
 
 // --------------------------------------------------------------------
 
+inline bool icompare_uchar(unsigned char a, unsigned char b)
+{
+	return std::tolower(a) == std::tolower(b);
+}
+
+inline bool icompare(const std::string &a, const std::string &b)
+{
+	return a.length() == b.length() and std::equal(a.begin(), a.end(), b.begin(), icompare_uchar);
+}
+
+// --------------------------------------------------------------------
+
 void parallel_for(size_t N, std::function<void(size_t)>&& f);
 
 // --------------------------------------------------------------------

@@ -1,0 +1,82 @@
+{
+	"desc": "${program_name} [options] command",
+	"visible": [
+		{
+			"name": "no-daemon",
+			"type": "switch",
+			"desc": "Do not fork into background"
+		}
+	],
+	"hidden": [
+		{
+			"name": "command",
+			"type": "string",
+			"desc": "Command, one of rescan, start, stop, status or reload",
+			"position": 1
+		},
+		{
+			"name": "debug,d",
+			"type": "int",
+			"desc": "Debug level (for even more verbose output)"
+		}
+	],
+	"config": [
+		{
+			"name": "pdb-redo-dir",
+			"type": "string",
+			"desc": "Directory containing PDB-REDO server data"
+		},
+		{
+			"name": "runs-dir",
+			"type": "string",
+			"desc": "Directory containing PDB-REDO server run directories"
+		},
+		{
+			"name": "address",
+			"type": "string",
+			"desc": "External address",
+			"default": "0.0.0.0"
+		},
+		{
+			"name": "port",
+			"type": "uint16_t",
+			"default": 10343,
+			"desc": "Port to listen to"
+		},
+		{
+			"name": "user,u",
+			"type": "string",
+			"desc": "User to run the daemon"
+		},
+		{
+			"name": "db-host",
+			"type": "string",
+			"desc": "Database host"
+		},
+		{
+			"name": "db-port",
+			"type": "string",
+			"desc": "Database port"
+		},
+		{
+			"name": "db-dbname",
+			"type": "string",
+			"desc": "Database name"
+		},
+		{
+			"name": "db-user",
+			"type": "string",
+			"desc": "Database user name"
+		},
+		{
+			"name": "db-password",
+			"type": "string",
+			"desc": "Database password"
+		},
+		{
+			"name": "mongo-db-uri",
+			"type": "string",
+			"desc": "The mongo db connection uri"
+		}
+	]
+}

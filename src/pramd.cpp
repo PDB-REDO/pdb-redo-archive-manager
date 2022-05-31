@@ -45,7 +45,7 @@
 
 // #include <zeep/crypto.hpp>
 #include <zeep/http/daemon.hpp>
-// #include <zeep/http/rest-controller.hpp>
+#include <zeep/http/rest-controller.hpp>
 #include <zeep/http/html-controller.hpp>
 #include <zeep/http/security.hpp>
 #include <zeep/http/login-controller.hpp>
@@ -413,137 +413,48 @@ fs::path gExePath;
 // 	}
 // };
 
-// class api_rest_controller : public zh::rest_controller
-// {
-//   public:
-// 	api_rest_controller(const std::string& pdbRedoDir)
-// 		: zh::rest_controller("api")
-// 		, m_pdb_redo_dir(pdbRedoDir)
-// 	{
-// 		// get session info
-// 		map_get_request("session/{id}", &api_rest_controller::get_session, "id");
+class api_rest_controller : public zh::rest_controller
+{
+  public:
+	api_rest_controller()
+		: zh::rest_controller("archive")
+	{
+		// // get session info
+		// map_get_request("session/{id}", &api_rest_controller::get_session, "id");
 
-// 		// delete a session
-// 		map_delete_request("session/{id}", &api_rest_controller::delete_session, "id");
+		// // delete a session
+		// map_delete_request("session/{id}", &api_rest_controller::delete_session, "id");
 
-// 		// return a list of runs
-// 		map_get_request("session/{id}/run", &api_rest_controller::get_all_runs, "id");
+		// // return a list of runs
+		// map_get_request("session/{id}/run", &api_rest_controller::get_all_runs, "id");
 
-// 		// Submit a run (job)
-// 		map_post_request("session/{id}/run", &api_rest_controller::create_job, "id",
-// 			"mtz-file", "pdb-file", "restraints-file", "sequence-file", "parameters");
+		// // Submit a run (job)
+		// map_post_request("session/{id}/run", &api_rest_controller::create_job, "id",
+		// 	"mtz-file", "pdb-file", "restraints-file", "sequence-file", "parameters");
 
-// 		// return info for a run
-// 		map_get_request("session/{id}/run/{run}", &api_rest_controller::get_run, "id", "run");
+		// // return info for a run
+		// map_get_request("session/{id}/run/{run}", &api_rest_controller::get_run, "id", "run");
 
-// 		// get a list of the files in output
-// 		map_get_request("session/{id}/run/{run}/output", &api_rest_controller::get_result_file_list, "id", "run");
+		// // get a list of the files in output
+		// map_get_request("session/{id}/run/{run}/output", &api_rest_controller::get_result_file_list, "id", "run");
 
-// 		// get a result file
-// 		map_get_request("session/{id}/run/{run}/output/{file}", &api_rest_controller::get_result_file, "id", "run", "file");
-// 	}
+		// // get a result file
+		// map_get_request("session/{id}/run/{run}/output/{file}", &api_rest_controller::get_result_file, "id", "run", "file");
 
-// 	virtual bool handle_request(zh::request& req, zh::reply& rep)
-// 	{
-// 		bool result = false;
+		// get a file
+		map_get_request("file/{hash}/{type}", &api_rest_controller::get_file, "hash", "type");
+	}
 
-// 		try
-// 		{
-// 			std::string authorization = req.get_header("Authorization");
-// 			// PDB-REDO-api Credential=token-id/date/pdb-redo-apiv2,SignedHeaders=host;x-pdb-redo-content-sha256,Signature=xxxxx
+	zh::reply get_file(const std::string &hash, const std::string &type)
+	{
+		auto &&[file, name, content_type] = data_service::instance().get_file(hash, type);
 
-// 			if (not ba::starts_with(authorization, "PDB-REDO-api "))
-// 				throw zh::unauthorized_exception();
+		zh::reply rep{zh::ok};
+		rep.set_content(file, content_type);
+		rep.set_header("content-disposition", "attachement; filename = \"" + name + '"');
 
-// 			std::vector<std::string> signedHeaders;
-
-// 			std::regex re(R"rx(Credential=("[^"]*"|'[^']*'|[^,]+),\s*SignedHeaders=("[^"]*"|'[^']*'|[^,]+),\s*Signature=("[^"]*"|'[^']*'|[^,]+)\s*)rx", std::regex::icase);
-
-// 			std::smatch m;
-// 			if (not std::regex_search(authorization, m, re))
-// 				throw zh::unauthorized_exception();
-
-// 			std::vector<std::string> credentials;
-// 			std::string credential = m[1].str();
-// 			ba::split(credentials, credential, ba::is_any_of("/"));
-
-// 			if (credentials.size() != 3 or credentials[2] != "pdb-redo-api")
-// 				throw zh::unauthorized_exception();
-
-// 			auto signature = zeep::decode_base64(m[3].str());
-
-// 			// Validate the signature
-
-// 			// canonical request
-
-// 			std::vector<std::tuple<std::string,std::string>> params;
-// 			for (auto& p: req.get_parameters())
-// 				params.push_back(std::make_tuple(p.first, p.second));
-// 			std::sort(params.begin(), params.end());
-// 			std::ostringstream ps;
-// 			auto n = params.size();
-// 			for (auto& [name, value]: params)
-// 			{
-// 				ps << zeep::http::encode_url(name);
-// 				if (not value.empty())
-// 					ps << '=' << zeep::http::encode_url(value);
-// 				if (n-- > 1)
-// 					ps << '&';
-// 			}
-
-// 			auto contentHash = zeep::encode_base64(zeep::sha256(req.get_payload()));
-
-// 			auto pathPart = req.get_uri();
-// 			auto pqs = pathPart.find('?');
-// 			if (pqs != std::string::npos)
-// 				pathPart.erase(pqs, std::string::npos);
-
-// 			std::ostringstream ss;
-// 			ss << req.get_method() << std::endl
-// 			   << pathPart << std::endl
-// 			   << ps.str() << std::endl
-// 			   << req.get_header("host") << std::endl
-// 			   << contentHash;
-
-// 			auto canonicalRequest = ss.str();
-// 			auto canonicalRequestHash = zeep::encode_base64(zeep::sha256(canonicalRequest));
-
-// 			// string to sign
-// 			auto timestamp = req.get_header("X-PDB-REDO-Date");
-
-// 			std::ostringstream ss2;
-// 			ss2 << "PDB-REDO-api" << std::endl
-// 			   << timestamp << std::endl
-// 			   << credential << std::endl
-// 			   << canonicalRequestHash;
-// 			auto stringToSign = ss2.str();
-
-// 			auto tokenid = credentials[0];
-// 			auto date = credentials[1];
-
-// 			auto secret = SessionStore::instance().get_by_id(std::stoul(tokenid)).token;
-// 			auto keyString = "PDB-REDO" + secret;
-
-// 			auto key = zeep::hmac_sha256(date, keyString);
-// 			if (zeep::hmac_sha256(stringToSign, key) != signature)
-// 				throw zh::unauthorized_exception();
-
-// 			result = zh::rest_controller::handle_request(req, rep);
-// 		}
-// 		catch (const std::exception& e)
-// 		{
-// 			using namespace std::literals;
-
-// 			rep.set_content(json({
-// 				{ "error", e.what() }
-// 			}));
-// 			rep.set_status(zh::unauthorized);
-
-// 			result = true;
-// 		}
-
-// 		return result;
-// 	}
+		return rep;
+	}
 
 // 	// CRUD routines
 
@@ -593,9 +504,9 @@ fs::path gExePath;
 // 		return RunService::instance().get_result_file(session.user, runID, file);
 // 	}
 
-//   private:
-// 	fs::path m_pdb_redo_dir;
-// };
+  private:
+	fs::path m_pdb_redo_dir;
+};
 
 // // --------------------------------------------------------------------
 
@@ -654,7 +565,11 @@ int a_main(int argc, char* const argv[])
 
 	int result = 0;
 
-	auto &config = configuration::init(argc, argv, []()
+#if USE_RSRC
+	mrsrc::istream config_templ("configuration.json");
+#endif
+
+	auto &config = configuration::init(argc, argv, config_templ, []()
 	{
 		std::cerr << R"(Command should be either:
 
@@ -687,110 +602,69 @@ int a_main(int argc, char* const argv[])
 		return 0;
 	}
 
-	try
+	std::string secret;
+	if (config.has("secret"))
+		secret = config.get("secret");
+	else
 	{
-
-// 		std::vector<std::string> vConn;
-// 		for (std::string opt: { "db-host", "db-port", "db-dbname", "db-user", "db-password" })
-// 		{
-// 			if (vm.count(opt) == 0)
-// 				continue;
-			
-// 			vConn.push_back(opt.substr(3) + "=" + vm[opt].as<std::string>());
-// 		}
-
-// 		prsm_db_connection::init(ba::join(vConn, " "));
-
-// 		std::string admin = vm["admin"].as<std::string>();
-// 		std::string pdbRedoDir = vm["pdb-redo-dir"].as<std::string>();
-// 		std::string runsDir = pdbRedoDir + "/runs";
-// 		if (vm.count("runs-dir"))
-// 			runsDir = vm["runs-dir"].as<std::string>();
-
-// 		RunService::init(runsDir);
-
-// 		SessionStore::init();
-// 		UserService::init(admin);
-		
-// 		std::string secret;
-// 		if (vm.count("secret"))
-// 			secret = vm["secret"].as<std::string>();
-// 		else
-// 		{
-// 			secret = zeep::encode_base64(zeep::random_hash());
-// 			std::cerr << "starting with created secret " << secret << std::endl;
-// 		}
-
-// 		zh::daemon server([secret, pdbRedoDir]()
-// 		{
-// 			auto sc = new zh::security_context(secret, UserService::instance());
-// 			sc->add_rule("/admin", { "ADMIN" });
-// 			sc->add_rule("/admin/**", { "ADMIN" });
-// 			sc->add_rule("/", {});
-
-// 			sc->register_password_encoder<prsm_pw_encoder>();
-
-// 			auto s = new zeep::http::server(sc);
-
-// 			s->add_error_handler(new prsm_db_error_handler());
-
-// #if DEBUG
-// 			s->set_template_processor(new zeep::http::file_based_html_template_processor("docroot"));
-// #else
-// 			s->set_template_processor(new zeep::http::rsrc_based_html_template_processor());
-// #endif
-
-// 			s->add_controller(new zh::login_controller());
-
-// 			s->add_controller(new prsm_html_controller(pdbRedoDir));
-// 			s->add_controller(new session_rest_controller());
-// 			s->add_controller(new api_rest_controller(pdbRedoDir));
-
-// 			return s;
-// 		}, APP_NAME );
-
-// 		std::string user = "www-data";
-// 		if (vm.count("user") != 0)
-// 			user = vm["user"].as<std::string>();
-		
-// 		std::string address = "0.0.0.0";
-// 		if (vm.count("address"))
-// 			address = vm["address"].as<std::string>();
-
-// 		uint16_t port = 10339;
-// 		if (vm.count("port"))
-// 			port = vm["port"].as<uint16_t>();
-
-// 		std::string command = vm["command"].as<std::string>();
-
-// 		if (command == "start")
-// 		{
-// 			if (address.find(':') != std::string::npos)
-// 				std::cout << "starting server at http://[" << address << "]:" << port << '/' << std::endl;
-// 			else
-// 				std::cout << "starting server at http://" << address << ':' << port << '/' << std::endl;
-
-// 			if (vm.count("no-daemon"))
-// 				result = server.run_foreground(address, port);
-// 			else
-// 				result = server.start(address, port, 2, 1, user);
-// 		}
-// 		else if (command == "stop")
-// 			result = server.stop();
-// 		else if (command == "status")
-// 			result = server.status();
-// 		else if (command == "reload")
-// 			result = server.reload();
-// 		else
-// 		{
-// 			std::cerr << "Invalid command" << std::endl;
-// 			result = 1;
-// 		}
+		secret = zeep::encode_base64(zeep::random_hash());
+		std::cerr << "starting with created secret " << secret << std::endl;
 	}
-	catch (const std::exception &ex)
+
+	zh::daemon server([secret]()
 	{
-		std::cerr << "exception:" << std::endl
-			 << ex.what() << std::endl;
+		// auto sc = new zh::security_context(secret, UserService::instance());
+		// sc->add_rule("/admin", { "ADMIN" });
+		// sc->add_rule("/admin/**", { "ADMIN" });
+		// sc->add_rule("/", {});
+
+		// sc->register_password_encoder<prsm_pw_encoder>();
+
+		// auto s = new zeep::http::server(sc);
+		auto s = new zeep::http::server{};
+
+		// s->add_error_handler(new prsm_db_error_handler());
+
+#ifndef NDEBUG
+		s->set_template_processor(new zeep::http::file_based_html_template_processor("docroot"));
+#else
+		s->set_template_processor(new zeep::http::rsrc_based_html_template_processor());
+#endif
+
+		// s->add_controller(new zh::login_controller());
+
+		// s->add_controller(new prsm_html_controller(pdbRedoDir));
+		// s->add_controller(new session_rest_controller());
+		s->add_controller(new api_rest_controller());
+
+		return s;
+	}, APP_NAME );
+
+	if (command == "start")
+	{
+		std::string address = config.get("address");
+		uint16_t port = config.get<uint16_t>("port");
+		std::string user = config.get("user");
+
+		if (address.find(':') != std::string::npos)
+			std::cout << "starting server at http://[" << address << "]:" << port << '/' << std::endl;
+		else
+			std::cout << "starting server at http://" << address << ':' << port << '/' << std::endl;
+
+		if (config.has("no-daemon"))
+			result = server.run_foreground(address, port);
+		else
+			result = server.start(address, port, 2, 1, user);
+	}
+	else if (command == "stop")
+		result = server.stop();
+	else if (command == "status")
+		result = server.status();
+	else if (command == "reload")
+		result = server.reload();
+	else
+	{
+		std::cerr << "Invalid command" << std::endl;
 		result = 1;
 	}
 
