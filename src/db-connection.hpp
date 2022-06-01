@@ -26,53 +26,51 @@
 
 #pragma once
 
-#include <functional>
+#include <mutex>
 
-// --------------------------------------------------------------------
+#include <pqxx/pqxx>
 
-inline bool icompare_uchar(unsigned char a, unsigned char b)
-{
-	return std::tolower(a) == std::tolower(b);
-}
+#include <zeep/http/error-handler.hpp>
 
-inline bool icompare(const std::string &a, const std::string &b)
-{
-	return a.length() == b.length() and std::equal(a.begin(), a.end(), b.begin(), icompare_uchar);
-}
-
-constexpr bool icompare(std::string_view a, std::string_view b)
-{
-	return a.length() == b.length() and std::equal(a.begin(), a.end(), b.begin(), icompare_uchar);
-}
-
-// --------------------------------------------------------------------
-
-void parallel_for(size_t N, std::function<void(size_t)>&& f);
-
-// --------------------------------------------------------------------
-
-int get_terminal_width();
-std::string get_user_name();
-
-// -----------------------------------------------------------------------
-
-class progress
+class db_connection
 {
   public:
-	progress(const std::string &action, int64_t max);
-	progress(const progress &) = delete;
-	progress &operator=(const progress &) = delete;
+	static void init();
+	static db_connection& instance();
 
-	// indefinite version, shows ascii spinner
-	progress(const std::string &action);
+	static pqxx::work start_transaction()
+	{
+		return pqxx::work(instance());
+	}
 
-	virtual ~progress();
+	pqxx::connection& get_connection();
 
-	void consumed(int64_t n); // consumed is relative
-	void set(int64_t n); // progress is absolute
+	operator pqxx::connection&()
+	{
+		return get_connection();
+	}
 
-	void message(const std::string &msg);
+	void reset();
 
   private:
-	struct progress_impl *m_impl;
+	db_connection(const db_connection&) = delete;
+	db_connection& operator=(const db_connection&) = delete;
+
+	db_connection(const std::string& connectionString);
+
+	std::string m_connection_string;
+
+	static std::unique_ptr<db_connection> s_instance;
+	static thread_local std::unique_ptr<pqxx::connection> s_connection;
 };
+
+// --------------------------------------------------------------------
+
+class db_error_handler : public zeep::http::error_handler
+{
+  public:
+
+	virtual bool create_error_reply(const zeep::http::request& req, std::exception_ptr eptr, zeep::http::reply& reply);
+};
+
+

@@ -30,28 +30,20 @@
 
 #include <date/date.h>
 
-#include <bsoncxx/builder/stream/array.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/helpers.hpp>
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/instance.hpp>
-#include <mongocxx/pool.hpp>
-#include <mongocxx/stdx.hpp>
-#include <mongocxx/uri.hpp>
+#include <libpq-fe.h>
+#include <pqxx/pqxx>
 
 #include <zeep/json/parser.hpp>
 #include <zeep/http/reply.hpp>
 
+#include "mrsrc.hpp"
+
 #include "configuration.hpp"
 #include "data-service.hpp"
-#include "json2bson.hpp"
+#include "db-connection.hpp"
 #include "utilities.hpp"
 
 namespace fs = std::filesystem;
-
-using bsoncxx::builder::basic::kvp;
-using bsoncxx::builder::basic::make_document;
 
 // --------------------------------------------------------------------
 
@@ -59,61 +51,73 @@ std::unique_ptr<data_service> data_service::s_instance;
 
 // --------------------------------------------------------------------
 
-class mongo_pool
-{
-  public:
-	static mongo_pool &instance()
-	{
-		return *s_instance;
-	}
-
-	static void init(const mongocxx::uri &uri)
-	{
-		s_instance.reset(new mongo_pool(uri));
-	}
-
-	auto get()
-	{
-		return m_pool.acquire();
-	}
-
-  private:
-	static std::unique_ptr<mongo_pool> s_instance;
-
-	mongo_pool(const mongocxx::uri &uri)
-		: m_pool(uri)
-	{
-	}
-
-	mongocxx::instance m_instance;
-	mongocxx::pool m_pool;
-};
-
-std::unique_ptr<mongo_pool> mongo_pool::s_instance;
-
-// --------------------------------------------------------------------
-
 data_service::data_service()
 {
 	auto &config = configuration::instance();
 
-	auto db = config.get("mongo-db-uri");
-	mongo_pool::init(mongocxx::uri{db});
-
 	m_pdb_redo_dir = config.get("pdb-redo-dir");
+}
+
+void data_service::reset()
+{
+	using namespace std::literals;
+
+	auto &config = configuration::instance();
+
+	// --------------------------------------------------------------------
+	// Don't use libpqxx here, it is too limited
+
+	std::ostringstream connectionString;
+	std::string dbuser;
+
+	for (auto opt: { "db-host", "db-port", "db-dbname", "db-user", "db-password" })
+	{
+		if (not config.has(opt))
+			continue;
+		
+		if (strcmp(opt, "db-user") == 0)
+			dbuser = config.get(opt);
+
+		connectionString << (opt + 3) << '=' << config.get(opt) << ' ';
+	}
+
+	auto connection = PQconnectdb(connectionString.str().c_str());
+	if (connection == nullptr)
+		throw std::runtime_error("Unable to connect to database");
+
+	if (PQstatus(connection) != CONNECTION_OK)
+		throw std::runtime_error(PQerrorMessage(connection));
+	
+	// --------------------------------------------------------------------
+	
+	// the schema
+	mrsrc::rsrc schema("db-schema.sql");
+	if (not schema)
+		throw std::runtime_error("Missing schema resource");
+
+	std::string sql(schema.data(), schema.size());
+	if (not dbuser.empty())
+	{
+		std::string::size_type i = 0;
+		while ((i = sql.find("${owner}", i)) != std::string::npos)
+			sql.replace(i, strlen("${owner}"), dbuser);
+	}
+
+	auto r = PQexec(connection, sql.c_str());
+	if (r == nullptr)
+		throw std::runtime_error(PQerrorMessage(connection));
+
+	if (PQresultStatus(r) != PGRES_COMMAND_OK)
+		throw std::runtime_error(PQresultErrorMessage(r));
+
+	PQfinish(connection);
 }
 
 void data_service::rescan()
 {
+	reset();
+
 	auto &config = configuration::instance();
-
-	// --------------------------------------------------------------------
-
-	auto client = mongo_pool::instance().get();
-
-	client->database("pdb_redo").drop();
-
-	auto coll = client->database("pdb_redo")["entries"];
 
 	// --------------------------------------------------------------------
 
@@ -172,14 +176,6 @@ void data_service::rescan()
 
 		try
 		{
-			auto doc = coll.find_one({make_document(kvp("hash", hash))});
-
-			if (doc)
-			{
-				std::cout << pdb_id << " " << hash << " exists" << std::endl;
-				continue;
-			}
-
 			std::ifstream versions_file(attic / "versions.json");
 			zeep::json::element versions;
 			parse_json(versions_file, versions);
@@ -188,25 +184,7 @@ void data_service::rescan()
 			zeep::json::element data;
 			parse_json(data_file, data);
 
-			using namespace date;
-			using namespace std::chrono;
-
-			std::istringstream date_ss{data["properties"]["TIME"].as<std::string>()};
-			year_month_day date_ymd{};
-			from_stream(date_ss, "%F", date_ymd);
-			auto date_dp = sys_days(date_ymd);
-
-			auto r = coll.insert_one(make_document(
-				kvp("pdbid", pdb_id),
-				kvp("hash", hash),
-				kvp("date", bsoncxx::types::b_date{date_dp}),
-				kvp("versions", to_bson(versions["data"])),
-				kvp("software", to_bson(versions["software"])),
-				kvp("properties", to_bson(data["properties"]))
-			));
-
-			if (not r)
-				std::cerr << "Inserting " << pdb_id << " with hash " << hash << " failed" << std::endl;
+			insert(pdb_id, hash, data, versions);
 		}
 		catch (const std::exception &ex)
 		{
@@ -215,30 +193,106 @@ void data_service::rescan()
 
 		p.consumed(1);
 	}
-
-	coll.create_index(make_document(kvp("hash", 1)), make_document(kvp("unique", true)));
 }
 
 // --------------------------------------------------------------------
 
-std::tuple<std::istream *, std::string, std::string> data_service::get_file(const std::string &hash, FileType type)
+void data_service::insert(const std::string &pdb_id, const std::string &hash, const zeep::json::element &data, const zeep::json::element &versions)
 {
-	auto client = mongo_pool::instance().get();
-	auto coll = client->database("pdb_redo")["entries"];
+	pqxx::work tx(db_connection::instance());
 
-	auto doc = coll.find_one(make_document(kvp("hash", hash)));
-	if (not doc)
-		throw zeep::http::not_found;
+	using namespace date;
+	using namespace std::chrono;
 
-	auto pdb_id_ele = doc->view()["pdbid"];
-	if (not pdb_id_ele)
-		throw std::runtime_error("pdbid not found in document!");
+	// std::istringstream date_ss{data["properties"]["TIME"].as<std::string>()};
+	// year_month_day date_ymd{};
+	// from_stream(date_ss, "%F", date_ymd);
+	// auto date_dp = sys_days(date_ymd);
+
+	auto &versions_data = versions["data"];
+	auto coordinates_revision_date_pdb = versions_data["coordinates_revision_date_pdb"].as<std::string>();
+	auto coordinates_revision_major_mmCIF = versions_data["coordinates_revision_major_mmCIF"].as<std::string>();
+	auto coordinates_revision_minor_mmCIF = versions_data["coordinates_revision_minor_mmCIF"].as<std::string>();
+	auto coordinates_edited = versions_data["coordinates_edited"].as<bool>();
+	auto reflections_revision = versions_data["reflections_revision"].as<std::string>();
+	auto reflections_edited = versions_data["reflections_edited"].as<bool>();
+
+	auto r = tx.exec1(R"(
+		INSERT INTO dbentry (pdb_id, version_hash, coordinates_revision_date_pdb, coordinates_revision_major_mmCIF, coordinates_revision_minor_mmCIF,
+			coordinates_edited, reflections_revision, reflections_edited)
+		VALUES ()" +
+			 tx.quote(pdb_id) + ", " +
+			 tx.quote(hash) + ", " +
+			 tx.quote(coordinates_revision_date_pdb) + ", " +
+			 tx.quote(coordinates_revision_major_mmCIF) + ", " +
+			 tx.quote(coordinates_revision_minor_mmCIF) + ", " +
+			 tx.quote(coordinates_edited) + ", " +
+			 tx.quote(reflections_revision) + ", " +
+			 tx.quote(reflections_edited) + ") RETURNING id");
+
+	auto id = r.at("id").as<int>();
+
+	auto &software = versions["software"];
+	for (auto software_it = software.begin(); software_it != software.end(); ++software_it)
+	{
+		auto program = software_it.key();
+		auto version = software_it.value()["version"].as<std::string>();
+		auto used = software_it.value()["used"].as<bool>();
+
+		int software_id;
+
+		try
+		{
+			pqxx::subtransaction txs(tx);
+			auto r = txs.exec1("SELECT id FROM software WHERE name = " + tx.quote(program) + " AND version = " + tx.quote(version));
+			std::tie(software_id) = r.as<int>();
+			txs.commit();
+		}
+		catch (const std::exception &ex)
+		{
+			pqxx::subtransaction txs(tx);
+			auto r = txs.exec1("INSERT INTO software (name, version) VALUES (" + tx.quote(program) + ", " + tx.quote(version) + ") RETURNING id");
+			std::tie(software_id) = r.as<int>();
+			txs.commit();
+		}
+		
+		pqxx::subtransaction txs2(tx);
+		txs2.exec("INSERT INTO dbentry_software (dbentry_id, software_id, used) VALUES (" + tx.quote(id) + ", " + tx.quote(software_id) + ", " + tx.quote(used) + ")");
+		txs2.commit();
+	}
+
+	tx.commit();
+
+}
+
+int data_service::get_software_id(const std::string &program, const std::string &version) const
+{
+	pqxx::work tx(db_connection::instance());
+
+	int result = -1;
+
+	try
+	{
+		auto r = tx.exec1("SELECT id FROM software WHERE name == " + tx.quote(program) + " AND version = " + tx.quote(version));
+		std::tie(result) = r.as<int>();
+	}
+	catch (const std::exception &ex)
+	{
+		auto r = tx.exec1("INSERT INTO software (name, version) VALUES (" + tx.quote(program) + ", " + tx.quote(version) + "RETURNING id");
+		std::tie(result) = r.as<int>();
+	}
 	
-	std::string pdb_id{pdb_id_ele.get_utf8().operator core::v1::string_view()};
+	tx.commit();
 
+	return result;
+}
+
+// --------------------------------------------------------------------
+
+std::tuple<std::istream *, std::string> data_service::get_file(const std::string &id, const std::string &hash, FileType type)
+{
 	fs::path path;
-	std::string file_name = pdb_id + '_' + hash + '_';
-	std::string content_type = "application/octet-stream";
+	std::string file_name = id + '_' + hash + '_';
 
 	std::unique_ptr<std::istream> is;
 
@@ -248,35 +302,32 @@ std::tuple<std::istream *, std::string, std::string> data_service::get_file(cons
 			break;
 
 		case FileType::CIF:
-			content_type = "text/plain";
-			path = get_path(pdb_id, hash, FileType::CIF);
+			path = get_path(id, hash, FileType::CIF);
 			is.reset(new std::ifstream(path));
 			file_name += path.filename().string();
 			break;
 
 		case FileType::MTZ:
-			path = get_path(pdb_id, hash, FileType::MTZ);
+			path = get_path(id, hash, FileType::MTZ);
 			is.reset(new std::ifstream(path));
 			file_name += path.filename().string();
 			break;
 
 		case FileType::DATA:
-			content_type = "application/json";
-			path = get_path(pdb_id, hash, FileType::DATA);
+			path = get_path(id, hash, FileType::DATA);
 			is.reset(new std::ifstream(path));
 			file_name += path.filename().string();
 			break;
 
 		case FileType::VERSIONS:
-			content_type = "application/json";
-			path = get_path(pdb_id, hash, FileType::VERSIONS);
+			path = get_path(id, hash, FileType::VERSIONS);
 			is.reset(new std::ifstream(path));
 			file_name += path.filename().string();
 			break;
 
 	}
 
-	return { is.release(), file_name, content_type };
+	return { is.release(), file_name };
 }
 
 fs::path data_service::get_path(const std::string &pdb_id, const std::string &hash, FileType type)

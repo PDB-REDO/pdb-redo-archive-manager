@@ -55,18 +55,16 @@
 
 // #include "user-service.hpp"
 // #include "run-service.hpp"
-// #include "prsm-db-connection.hpp"
 
 #include "configuration.hpp"
 #include "data-service.hpp"
-#include "revision.hpp"
+#include "db-connection.hpp"
 
 #include "mrsrc.hpp"
 
 namespace zh = zeep::http;
 namespace fs = std::filesystem;
 namespace ba = boost::algorithm;
-namespace po = boost::program_options;
 namespace pt = boost::posix_time;
 
 using json = zeep::json::element;
@@ -442,12 +440,13 @@ class api_rest_controller : public zh::rest_controller
 		// map_get_request("session/{id}/run/{run}/output/{file}", &api_rest_controller::get_result_file, "id", "run", "file");
 
 		// get a file
-		map_get_request("file/{hash}/{type}", &api_rest_controller::get_file, "hash", "type");
+		map_get_request("file/{id}/{hash}/{type}", &api_rest_controller::get_file, "id", "hash", "type");
 	}
 
-	zh::reply get_file(const std::string &hash, const std::string &type)
+	zh::reply get_file(const std::string &id, const std::string &hash, const std::string &type)
 	{
-		auto &&[file, name, content_type] = data_service::instance().get_file(hash, type);
+		auto &&[file, name] = data_service::instance().get_file(id, hash, type);
+		auto content_type = mimetype_for_filetype(filetype_from_string(type));
 
 		zh::reply rep{zh::ok};
 		rep.set_content(file, content_type);
@@ -582,12 +581,20 @@ int a_main(int argc, char* const argv[])
 
 	// --------------------------------------------------------------------
 
-	auto command = config.get("command");
-
-	if (command.empty())
+	if (not config.has("command"))
 	{
 		std::cerr << "No command specified" << std::endl;
 		exit(1);
+	}
+
+	db_connection::init();
+
+	auto command = config.get("command");
+
+	if (command == "reinit")
+	{
+		data_service::reset();
+		return 0;
 	}
 
 	if (not config.has("pdb-redo-dir"))
@@ -623,7 +630,7 @@ int a_main(int argc, char* const argv[])
 		// auto s = new zeep::http::server(sc);
 		auto s = new zeep::http::server{};
 
-		// s->add_error_handler(new prsm_db_error_handler());
+		s->add_error_handler(new db_error_handler());
 
 #ifndef NDEBUG
 		s->set_template_processor(new zeep::http::file_based_html_template_processor("docroot"));

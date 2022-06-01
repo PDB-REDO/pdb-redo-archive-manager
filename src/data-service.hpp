@@ -26,8 +26,6 @@
 
 #pragma once
 
-#include <boost/program_options/variables_map.hpp>
-
 #include <zeep/json/element.hpp>
 
 #include "utilities.hpp"
@@ -41,9 +39,35 @@ enum class FileType
 	VERSIONS
 };
 
+constexpr const char *mimetype_for_filetype(FileType t)
+{
+	switch (t)
+	{
+		case FileType::ZIP: 	return "application/zip";
+		case FileType::CIF: 	return "text/plain";
+		case FileType::MTZ: 	return "application/octet-stream";
+		case FileType::DATA:
+		case FileType::VERSIONS:return "application/json";
+		default:				throw std::invalid_argument("Invalid file type");
+	}
+}
+
+constexpr FileType filetype_from_string(std::string_view s)
+{
+	if (icompare(s, "zip")) return FileType::ZIP;
+	if (icompare(s, "cif")) return FileType::CIF;
+	if (icompare(s, "mtz")) return FileType::MTZ;
+	if (icompare(s, "data")) return FileType::DATA;
+	if (icompare(s, "versions")) return FileType::VERSIONS;
+	throw std::invalid_argument("Invalid file type");
+}
+
 class data_service
 {
   public:
+	/// \brief Wipe databank if it exists and create new based on info in config
+	static void reset();
+
 	/// \brief Return the singleton instance of data_service, will init one if it doesn't exist.
 	static data_service &instance()
 	{
@@ -54,29 +78,30 @@ class data_service
 
 	void rescan();
 
-	std::string get_pdb_id_for_hash(const std::string &hash) const;
+	/// \brief Return the file of type \a type for the hash \a hash returning a tuple containing the istream and name of the download file
+	///
+	/// \param id The PDB-REDO ID
+	/// \param hash	The hash for this version
+	/// \param type The type of the requested file
+	/// \returns A tuple containing an std::istream pointer and a file name
+	std::tuple<std::istream *, std::string> get_file(const std::string &id, const std::string &hash, FileType type);
 
 	/// \brief Return the file of type \a type for the hash \a hash returning a tuple containing the istream and name of the download file
 	///
-	/// \param hash	The hash for this PDB-REDO set of data
+	/// \param id The PDB-REDO ID
+	/// \param hash	The hash for this version
 	/// \param type The type of the requested file
-	/// \returns A tuple containing an std::istream pointer, a name and a content-type string
-	std::tuple<std::istream *, std::string, std::string> get_file(const std::string &hash, FileType type);
-
-	/// \brief Return the file of type \a type for the hash \a hash returning a tuple containing the istream and name of the download file
-	///
-	/// \param hash	The hash for this PDB-REDO set of data
-	/// \param type The type of the requested file
-	/// \returns A tuple containing an std::istream pointer, a name and a content-type string
-	std::tuple<std::istream *, std::string, std::string> get_file(const std::string &hash, const std::string &type)
+	/// \returns A tuple containing an std::istream pointer and a file name
+	std::tuple<std::istream *, std::string> get_file(const std::string &id, const std::string &hash, const std::string &type)
 	{
-		if (icompare(type, "zip")) return get_file(hash, FileType::ZIP);
-		if (icompare(type, "cif")) return get_file(hash, FileType::CIF);
-		if (icompare(type, "mtz")) return get_file(hash, FileType::MTZ);
-		if (icompare(type, "data")) return get_file(hash, FileType::DATA);
-		if (icompare(type, "versions")) return get_file(hash, FileType::VERSIONS);
-		throw std::runtime_error("Invalid file type specified: " + type);
+		return get_file(id, hash, filetype_from_string(type));
 	}
+
+	/// \brief Insert a new PDB-REDO entry
+	void insert(const std::string &pdb_id, const std::string &hash, const zeep::json::element &data, const zeep::json::element &versions);
+
+	/// \brief Return the id for the software entry with name \a program and version \a version
+	int get_software_id(const std::string &program, const std::string &version) const;
 
   private:
 
