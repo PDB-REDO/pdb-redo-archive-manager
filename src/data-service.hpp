@@ -30,6 +30,8 @@
 
 #include "utilities.hpp"
 
+// --------------------------------------------------------------------
+
 enum class FileType
 {
 	ZIP,
@@ -61,6 +63,12 @@ constexpr FileType filetype_from_string(std::string_view s)
 	if (icompare(s, "versions")) return FileType::VERSIONS;
 	throw std::invalid_argument("Invalid file type");
 }
+
+// --------------------------------------------------------------------
+
+enum class PropertyType { Null, String, Number, Boolean };
+
+// --------------------------------------------------------------------
 
 class data_service
 {
@@ -103,6 +111,19 @@ class data_service
 	/// \brief Return the id for the software entry with name \a program and version \a version
 	int get_software_id(const std::string &program, const std::string &version) const;
 
+	/// \brief Return the property type for property named \a name
+	PropertyType get_property_type(const std::string &name) const
+	{
+		try
+		{
+			return m_prop_types.at(name);
+		}
+		catch(const std::exception& e)
+		{
+			std::throw_with_nested(std::runtime_error("Undefined property " + name));
+		}
+	}
+
   private:
 
 	data_service();
@@ -114,4 +135,5 @@ class data_service
 	static std::unique_ptr<data_service> s_instance;
 
 	std::filesystem::path m_pdb_redo_dir;
+	std::map<std::string,PropertyType> m_prop_types;
 };

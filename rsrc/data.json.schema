@@ -1,0 +1,1354 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema#",
+	"$ref": "#/definitions/Data",
+	"definitions": {
+		"Data": {
+			"description": "",
+			"type": "object",
+			"properties": {
+				"pdbid": {
+					"description": "PDB-ID",
+					"type": "string"
+				},
+				"properties": {
+					"description": "",
+					"$ref": "#/definitions/Properties"
+				}
+			},
+			"required": [
+				"pdbid",
+				"properties"
+			],
+			"title": "Data"
+		},
+		"Properties": {
+			"type": "object",
+			"properties": {
+				"AAXIS": {
+					"description": "Length of cell axis a",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"ALPHA": {
+					"description": "Cell angle alpha",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"BAVER": {
+					"description": "Average B-factor of the original model",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"BAXIS": {
+					"description": "Length of cell axis b",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"BBEST": {
+					"description": "The optimised B-factor restraint weight",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"BETA": {
+					"description": "Cell angle beta",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"BLTBEST": {
+					"description": "The optimal X-ray matrix weight for the final refinement",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"BREFTYPE": {
+					"description": "B-factor model",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"BWILS": {
+					"description": "Wilson B-factor (calculated by SFcheck)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"CAXIS": {
+					"description": "Length of cell axis c",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"CCFFIN": {
+					"description": "The reciprocal space correlation coefficient for the test set (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"CCFOLD": {
+					"description": "The reciprocal space correlation coefficient for the test set (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"CCWFIN": {
+					"description": "The reciprocal space correlation coefficient for the work set (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"CCWOLD": {
+					"description": "The reciprocal space correlation coefficient for the work set (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"COMMENT": {
+					"description": "Free text comment",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"COMPLETED": {
+					"description": "The completeness of the dataset",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"DATARESH": {
+					"description": "High resolution cut-off from reflection data",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"DATARESL": {
+					"description": "Low resolution cut-off from reflection data",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"DOTLS": {
+					"description": "Was TLS refinement used by PDB-REDO?",
+					"type": "boolean"
+				},
+				"DYEAR": {
+					"description": "Year of deposition",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"EXPTYP": {
+					"description": "Type of experimental data that was used",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"FALSETWIN": {
+					"description": "Indicates whether the twinning used by the depositors was considered suspicious",
+					"type": "boolean"
+				},
+				"FARMSZ": {
+					"description": "Bond angle rmsZ (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FBCONF": {
+					"description": "The final backbone conformation normality Z-score for the structure model from PDB-REDO",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FBPGRMSZ": {
+					"description": "Base pair gemometry rmsZ-score (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FBPHBRMSZ": {
+					"description": "Base pair hydrogen bond rmsZ-score (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FBRMSZ": {
+					"description": "Bond length rmsZ (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FBUCKLE": {
+					"description": "Base pair buckling rmsZ-score (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FBUMPS": {
+					"description": "Number of bumps (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FCHI12": {
+					"description": "The final Chi-1 Chi-2 rotamer Z-score for the structure model from PDB-REDO",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FCONFAL": {
+					"description": "Overall nucleic acid CONFAL score (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FDNRMSD": {
+					"description": "Overall nucleic acid DNATCO rmsd (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FGFOLD": {
+					"description": "Estimated, by FoldX, Gibbs function for folding (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FHBSAT": {
+					"description": "The fraction of buried H-bond donors and acceptors with H-bonds (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FHBUNS": {
+					"description": "Total number of unsatisfied hydrogen bond donors and acceptors (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FHRMSZ": {
+					"description": "H-bond length rmsZ versus the final restraints (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FPROPEL": {
+					"description": "Base pair propeller twisting rmsZ-score (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FSCHI12": {
+					"description": "Sigma value for the Chi-1 Chi-2 rotamer Z-score (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FSHEAR": {
+					"description": "Base pair shearing rmsZ-score (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FSTRETCH": {
+					"description": "Base pair stretching rmsZ-score (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FSZRAMA": {
+					"description": "Sigma value for the Ramachandran plot Z-score (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FWBMPS": {
+					"description": "The squared VdW violation per 100 atoms (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FZPAK1": {
+					"description": "The final first generation packing Z-score for the structure model from PDB-REDO",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FZPAK2": {
+					"description": "The final second generation packing Z-score for the structure model from PDB-REDO",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"FZRAMA": {
+					"description": "The final Ramachandran plot Z-score for the structure model from PDB-REDO",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"GAMMA": {
+					"description": "Cell angle gamma",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"GOT_NUC": {
+					"description": "Does the model contain nucleic acid?",
+					"type": "boolean"
+				},
+				"GOT_PROT": {
+					"description": "Does the model contain protein?",
+					"type": "boolean"
+				},
+				"HBFLIP": {
+					"description": "The number of his/asn/gln flips",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"IONPROBE": {
+					"description": "Ion probe for solvent mask",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"ISTWIN": {
+					"description": "Was the data treated as twinned?",
+					"type": "boolean"
+				},
+				"LEGACY": {
+					"description": "Was the the model treated as a legacy structure model?",
+					"type": "boolean"
+				},
+				"NARMSZ": {
+					"description": "Bond angle rmsZ (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NBBFLIP": {
+					"description": "The number of peptide flips made by pepflip",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NBCONF": {
+					"description": "The backbone conformation normality Z-score for the structure model after restrained refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NBPGRMSZ": {
+					"description": "Base pair gemometry rmsZ-score (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NBPHBRMSZ": {
+					"description": "Base pair hydrogen bond rmsZ-score (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NBRMSZ": {
+					"description": "Bond length rmsZ (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NBUCKLE": {
+					"description": "Base pair buckling rmsZ-score (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NBUMPS": {
+					"description": "Number of bumps (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NCHI12": {
+					"description": "The Chi-1 Chi-2 rotamer Z-score for the structure model after restrained refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NCHIRFX": {
+					"description": "The number of fixes to chiral centres made by SideAide",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NCONFAL": {
+					"description": "Overall nucleic acid CONFAL score (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NDNRMSD": {
+					"description": "Overall nucleic acid DNATCO rmsd (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NDROTA": {
+					"description": "The number of side chains for which the rotamer changed",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NGFOLD": {
+					"description": "Estimated, by FoldX, Gibbs function for folding (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NHBSAT": {
+					"description": "The fraction of buried H-bond donors and acceptors with H-bonds (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NHBUNS": {
+					"description": "Total number of unsatisfied hydrogen bond donors and acceptors (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NHRMSZ": {
+					"description": "H-bond length rmsZ versus the final restraints (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NLOOPS": {
+					"description": "The number of loops that were added",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NMETALREST2": {
+					"description": "The nubere of metal site restraints used in the final refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NNUCLEICREST": {
+					"description": "Number of nucleic acid restraints",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NOPDB": {
+					"description": "Was the PDB file edited manually?",
+					"type": "boolean"
+				},
+				"NOSF": {
+					"description": "Was the reflection file edited manually?",
+					"type": "boolean"
+				},
+				"NPROPEL": {
+					"description": "Base pair propeller twisting rmsZ-score (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NREFCNT": {
+					"description": "Number of reflections",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NSCBLT": {
+					"description": "The number of side chains added by SideAide",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NSCHI12": {
+					"description": "Sigma value for the Chi-1 Chi-2 rotamer Z-score (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NSHEAR": {
+					"description": "Base pair shearing rmsZ-score (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NSTRETCH": {
+					"description": "Base pair stretching rmsZ-score (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NSZRAMA": {
+					"description": "Sigma value for the Ramachandran plot Z-score (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NTLS": {
+					"description": "Number of different TLS group selctions tested",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NTSTCNT": {
+					"description": "Final number of test set reflections",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NWATDEL": {
+					"description": "The number of waters deleted by centrifuge",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NWBMPS": {
+					"description": "The squared VdW violation per 100 atoms (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NZPAK1": {
+					"description": "The first generation packing Z-score for the structure model after restrained refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NZPAK2": {
+					"description": "The second generation packing Z-score for the structure model after restrained refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"NZRAMA": {
+					"description": "The Ramachandran plot Z-score for the structure model after restrained refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OARMSZ": {
+					"description": "Bond angle rmsZ (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OBCONF": {
+					"description": "The backbone conformation normality Z-score for the input structure model",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OBPGRMSZ": {
+					"description": "Base pair gemometry rmsZ-score (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OBPHBRMSZ": {
+					"description": "Base pair hydrogen bond rmsZ-score (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OBRMSZ": {
+					"description": "Bond length rmsZ (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OBUCKLE": {
+					"description": "Base pair buckling rmsZ-score (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OBUMPS": {
+					"description": "Number of bumps (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OCHI12": {
+					"description": "The Chi-1 Chi-2 rotamer Z-score for the input structure model",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OCONFAL": {
+					"description": "Overall nucleic acid CONFAL score (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"ODNRMSD": {
+					"description": "Overall nucleic acid DNATCO rmsd (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OGFOLD": {
+					"description": "Estimated, by FoldX, Gibbs function for folding (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OHBSAT": {
+					"description": "The fraction of buried H-bond donors and acceptors with H-bonds (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OHBUNS": {
+					"description": "Total number of unsatisfied hydrogen bond donors and acceptors (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OHRMSZ": {
+					"description": "H-bond length rmsZ versus the final restraints (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OPROPEL": {
+					"description": "Base pair propeller twisting rmsZ-score (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OPTTLSG": {
+					"description": "Name of the optimal TLS group selection",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"ORITLS": {
+					"description": "Was TLS refinement used in the origional refinement?",
+					"type": "boolean"
+				},
+				"OSCHI12": {
+					"description": "Sigma value for the Chi-1 Chi-2 rotamer Z-score (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OSHEAR": {
+					"description": "Base pair shearing rmsZ-score (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OSTRETCH": {
+					"description": "Base pair stretching rmsZ-score (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OSZRAMA": {
+					"description": "Sigma value for the Ramachandran plot Z-score (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OWBMPS": {
+					"description": "The squared VdW violation per 100 atoms (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OZPAK1": {
+					"description": "The first generation (coarse) packing Z-score for the input structure model",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OZPAK2": {
+					"description": "The second generation (fine) packing Z-score for the input structure model",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"OZRAMA": {
+					"description": "The Ramachandran plot Z-score for the input structure model",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"PROG": {
+					"description": "Original refinement program",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"RCAL": {
+					"description": "The baseline R-factor calculated by Refmac",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"REFPATM": {
+					"description": "Number of reflections per (non-hydrogen) atom",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RESOLUTION": {
+					"description": "Data resolution (from PDB header)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RESOTYPE": {
+					"description": "The resolution category that defines the searchspace for restraints",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFACT": {
+					"description": "The R-factor as extracted from the PDB header",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFCAL": {
+					"description": "The baseline free R-factor calculated by Refmac",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFCALUNB": {
+					"description": "The expected free R-factor for a converged, unbiased refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFCALZ": {
+					"description": "The free R-factor Z-score (positive values mean lower than expected free R-factor)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFFIN": {
+					"description": "The final free R-factor from PDB-REDO",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFFINUNB": {
+					"description": "The expected final free R-factor from PDB-REDO",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFFINZ": {
+					"description": "The final free R-factor Z-score from PDB-REDO",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFIN": {
+					"description": "The final R-factor from PDB-REDO",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFREE": {
+					"description": "The free R-factor as extracted from the PDB header",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFRRAT": {
+					"description": "The expected ratio for R-free/R for a converged, unbiased refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFTLS": {
+					"description": "The free R-factor after restrained refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFTLSUNB": {
+					"description": "The expected free R-factor after restrained refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RFTLSZ": {
+					"description": "The free R-factor Z-score after restrained refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RSCCB": {
+					"description": "Number of residues with significantly improved real-space correlation coefficient",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RSCCW": {
+					"description": "Number of residues with significantly deteriorated real-space correlation coefficient",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RSHRINK": {
+					"description": "Shrinkage term for solvent mask",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RSRB": {
+					"description": "Number of residues with significantly improved real-space R-factor",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RSRW": {
+					"description": "Number of residues with significantly deteriorated real-space R-factor",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"RTLS": {
+					"description": "The R-factor after restrained refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"SIGRFCAL": {
+					"description": "The value for sigma(R-free) based on Tickle et al. Acta Cryst (2000), D56, 442-450",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"SIGRFFIN": {
+					"description": "The final value for sigma(R-free) from PDB-REDO",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"SIGRFTLS": {
+					"description": "The value for sigma(R-free) after restrained refinement",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"SOLVD": {
+					"description": "Density-based estimate of the solvent percentage (from the program RWCONTENTS)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"SOLVENT": {
+					"description": "Solvent model",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"SPACEGROUP": {
+					"description": "The space group",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"SRFRRAT": {
+					"description": "Sigma value for the expected R-free/R ratio",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"STFLIP": {
+					"description": "The number of asp/glu/phe/tyr/arg flips to standardise the ultimate chi-angle",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TFBPGRMSZ": {
+					"description": "Base pair gemometry percentile (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TFCHI12": {
+					"description": "The Chi-1 Chi-2 rotamer Z-score percentile versus the PDB (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TFCONFAL": {
+					"description": "Overall nucleic acid CONFAL percentile (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TFHBSAT": {
+					"description": "H-bond satisfaction fraction percentile versus the PDB (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TFWBMPS": {
+					"description": "The weighted bump severity score percentile versus the PDB (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TFZPAK1": {
+					"description": "The coarse packing Z-score percentile versus the PDB (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TFZPAK2": {
+					"description": "The second generation (fine) packing Z-score percentile versus the PDB (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TFZRAMA": {
+					"description": "Ramachandran Z-score percentile versus the PDB (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TIME": {
+					"description": "The date when the entry was made in YYYY-MM-DD",
+					"type": "string",
+					"format": "date"
+				},
+				"TITLE": {
+					"description": "The title of the input model",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"TLSBEST": {
+					"description": "The optimal X-ray matrix weight for restrained refinement",
+					"type": [
+						"string",
+						"null"
+					]
+				},
+				"TNCONFAL": {
+					"description": "Overall nucleic acid CONFAL percentile (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TOBPGRMSZ": {
+					"description": "Base pair gemometry percentile (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TOCHI12": {
+					"description": "The Chi-1 Chi-2 rotamer Z-score percentile versus the PDB (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TOCONFAL": {
+					"description": "Overall nucleic acid CONFAL percentile (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TOHBSAT": {
+					"description": "H-bond satisfaction fraction percentile versus the PDB (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TOWBMPS": {
+					"description": "The weighted bump severity score percentile versus the PDB (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TOZPAK1": {
+					"description": "The coarse packing Z-score percentile versus the PDB (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TOZPAK2": {
+					"description": "The second generation (fine) packing Z-score percentile versus the PDB (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TOZRAMA": {
+					"description": "Ramachandran Z-score percentile versus the PDB (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TSTCNT": {
+					"description": "Number of reflections in original test set",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"TSTPRC": {
+					"description": "Test set size (percentage)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"URESO": {
+					"description": "The resolution to which the experimental data is actually used",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"USIGMA": {
+					"description": "Were the sigF/sigI data used?",
+					"type": "boolean"
+				},
+				"VDWPROBE": {
+					"description": "VanderWaals probe for solvent mask",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"VERSION": {
+					"description": "The version of PDB-REDO used to optimise the model",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"WAVELENGTH": {
+					"description": "The wavelength used for calculating the atomic form factors (NA means the Refmac default, Cu-Kalpha is used)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"ZCALERR": {
+					"description": "Was the test set considered biased?",
+					"type": "boolean"
+				},
+				"ZCCF": {
+					"description": "Z-score for the change in reciprocal space correlation coefficient for the test set",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"ZCCW": {
+					"description": "Z-score for the change in reciprocal space correlation coefficient for the work set",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"ZRFRRATCAL": {
+					"description": "Z-score for the R-free/R ratio (original)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"ZRFRRATFIN": {
+					"description": "Z-score for the R-free/R ratio (final PDB-REDO model)",
+					"type": [
+						"number",
+						"null"
+					]
+				},
+				"ZRFRRATTLS": {
+					"description": "Z-score for the R-free/R ratio (after restrained refinement)",
+					"type": [
+						"number",
+						"null"
+					]
+				}
+			},
+			"required": [
+				"AAXIS",
+				"ALPHA",
+				"BAVER",
+				"BAXIS",
+				"BBEST",
+				"BETA",
+				"BLTBEST",
+				"BREFTYPE",
+				"BWILS",
+				"CAXIS",
+				"CCFFIN",
+				"CCFOLD",
+				"CCWFIN",
+				"CCWOLD",
+				"COMPLETED",
+				"DATARESH",
+				"DATARESL",
+				"DOTLS",
+				"DYEAR",
+				"EXPTYP",
+				"FARMSZ",
+				"FBCONF",
+				"FBRMSZ",
+				"FBUMPS",
+				"FCHI12",
+				"FGFOLD",
+				"FHBSAT",
+				"FHBUNS",
+				"FWBMPS",
+				"FZPAK1",
+				"FZPAK2",
+				"FZRAMA",
+				"GAMMA",
+				"HBFLIP",
+				"IONPROBE",
+				"ISTWIN",
+				"LEGACY",
+				"NARMSZ",
+				"NBBFLIP",
+				"NBCONF",
+				"NBRMSZ",
+				"NBUMPS",
+				"NCHI12",
+				"NCHIRFX",
+				"NDROTA",
+				"NGFOLD",
+				"NHBSAT",
+				"NHBUNS",
+				"NREFCNT",
+				"NSCBLT",
+				"NTLS",
+				"NTSTCNT",
+				"NWATDEL",
+				"NWBMPS",
+				"NZPAK1",
+				"NZPAK2",
+				"NZRAMA",
+				"OARMSZ",
+				"OBCONF",
+				"OBRMSZ",
+				"OBUMPS",
+				"OCHI12",
+				"OGFOLD",
+				"OHBSAT",
+				"OHBUNS",
+				"OPTTLSG",
+				"ORITLS",
+				"OWBMPS",
+				"OZPAK1",
+				"OZPAK2",
+				"OZRAMA",
+				"PROG",
+				"RCAL",
+				"REFPATM",
+				"RESOLUTION",
+				"RFACT",
+				"RFCAL",
+				"RFCALUNB",
+				"RFCALZ",
+				"RFFIN",
+				"RFFINUNB",
+				"RFFINZ",
+				"RFIN",
+				"RFREE",
+				"RFRRAT",
+				"RFTLS",
+				"RFTLSUNB",
+				"RFTLSZ",
+				"RSCCB",
+				"RSCCW",
+				"RSHRINK",
+				"RSRB",
+				"RSRW",
+				"RTLS",
+				"SIGRFCAL",
+				"SIGRFFIN",
+				"SIGRFTLS",
+				"SOLVD",
+				"SOLVENT",
+				"SPACEGROUP",
+				"STFLIP",
+				"TLSBEST",
+				"TSTCNT",
+				"TSTPRC",
+				"URESO",
+				"VDWPROBE",
+				"VERSION",
+				"WAVELENGTH",
+				"ZCCF",
+				"ZCCW"
+			],
+			"title": "Properties"
+		}
+	}
+}

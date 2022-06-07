@@ -172,6 +172,7 @@ if(USE_RSRC)
 		${PROJECT_SOURCE_DIR}/docroot/
 		${PROJECT_SOURCE_DIR}/rsrc/configuration.json
 		${PROJECT_SOURCE_DIR}/rsrc/db-schema.sql
+		${PROJECT_SOURCE_DIR}/rsrc/data.json.schema
 	)
 endif()
 

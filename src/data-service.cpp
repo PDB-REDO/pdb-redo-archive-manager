@@ -56,6 +56,52 @@ data_service::data_service()
 	auto &config = configuration::instance();
 
 	m_pdb_redo_dir = config.get("pdb-redo-dir");
+
+	// the data.json schema
+	mrsrc::istream schema_s("data.json.schema");
+	if (not schema_s)
+		throw std::runtime_error("Missing resource");
+
+	zeep::json::element schema;
+	parse_json(schema_s, schema);
+
+	auto prop_schema = schema["definitions"]["Properties"]["properties"];
+
+	for (auto prop_it = prop_schema.begin(); prop_it != prop_schema.end(); ++prop_it)
+	{
+		auto name = prop_it.key();
+		auto &value = prop_it.value()["type"];
+
+		if (value.type() == zeep::json::element::value_type::array)
+		{
+			for (auto &type : value)
+			{
+				auto type_s = type.as<std::string>();
+				if (type_s == "string")
+					m_prop_types[name] = PropertyType::String;
+				else if (type_s == "number")
+					m_prop_types[name] = PropertyType::Number;
+				else if (type_s == "boolean")
+					m_prop_types[name] = PropertyType::Boolean;
+				else
+					continue;
+				break;
+			}
+		}
+		else if (value.type() == zeep::json::element::value_type::string)
+		{
+			auto type_s = value.as<std::string>();
+			if (type_s == "string")
+				m_prop_types[name] = PropertyType::String;
+			else if (type_s == "number")
+				m_prop_types[name] = PropertyType::Number;
+			else if (type_s == "boolean")
+				m_prop_types[name] = PropertyType::Boolean;
+		}
+		
+		if (not m_prop_types.count(name))
+			throw std::runtime_error("Property " + name + " has unknown type");
+	}
 }
 
 void data_service::reset()
@@ -204,6 +250,7 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 	using namespace date;
 	using namespace std::chrono;
 
+
 	// std::istringstream date_ss{data["properties"]["TIME"].as<std::string>()};
 	// year_month_day date_ymd{};
 	// from_stream(date_ss, "%F", date_ymd);
@@ -259,6 +306,54 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 		pqxx::subtransaction txs2(tx);
 		txs2.exec("INSERT INTO dbentry_software (dbentry_id, software_id, used) VALUES (" + tx.quote(id) + ", " + tx.quote(software_id) + ", " + tx.quote(used) + ")");
 		txs2.commit();
+	}
+
+	auto &properties = data["properties"];
+	for (auto property_it = properties.begin(); property_it != properties.end(); ++property_it)
+	{
+		auto name = property_it.key();
+		auto value = property_it.value();
+
+		if (value.is_null())
+			continue;
+
+		int property_id;
+
+		try
+		{
+			pqxx::subtransaction txs(tx);
+			auto r = txs.exec1("SELECT id FROM property WHERE name = " + tx.quote(name));
+			std::tie(property_id) = r.as<int>();
+			txs.commit();
+		}
+		catch (const std::exception &ex)
+		{
+			pqxx::subtransaction txs(tx);
+			auto r = txs.exec1("INSERT INTO property (name) VALUES (" + tx.quote(name) + ") RETURNING id");
+			std::tie(property_id) = r.as<int>();
+			txs.commit();
+		}
+
+		pqxx::subtransaction txs(tx);
+		switch (get_property_type(name))
+		{
+			case PropertyType::String:
+				txs.exec("INSERT INTO dbentry_property_string (dbentry_id, property_id, value) VALUES (" + tx.quote(id) + ", " + tx.quote(property_id) + ", " + tx.quote(value.as<std::string>()) + ")");
+				break;
+
+			case PropertyType::Number:
+				txs.exec("INSERT INTO dbentry_property_number (dbentry_id, property_id, value) VALUES (" + tx.quote(id) + ", " + tx.quote(property_id) + ", " + tx.quote(value.as<long double>()) + ")");
+				break;
+
+			case PropertyType::Boolean:
+				txs.exec("INSERT INTO dbentry_property_boolean (dbentry_id, property_id, value) VALUES (" + tx.quote(id) + ", " + tx.quote(property_id) + ", " + tx.quote(value.as<bool>()) + ")");
+				break;
+
+			default:
+				std::runtime_error("Error, unknown property type for " + name);
+		}
+
+		txs.commit();
 	}
 
 	tx.commit();

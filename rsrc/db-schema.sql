@@ -1,12 +1,13 @@
 -- clean up first
 
-drop table if exists dbentry_properties_int;
-drop table if exists dbentry_properties_text;
-drop table if exists dbentry_properties_float;
-drop table if exists properties;
-drop table if exists dbentry_software;
-drop table if exists software;
-drop table if exists dbentry;
+drop table if exists dbentry_property cascade;
+drop table if exists property cascade;
+drop table if exists dbentry_property_number cascade;
+drop table if exists dbentry_property_string cascade;
+drop table if exists dbentry_property_boolean cascade;
+drop table if exists dbentry_software cascade;
+drop table if exists software cascade;
+drop table if exists dbentry cascade;
 
 -- software
 create table software (
@@ -16,8 +17,8 @@ create table software (
 	unique(name, version)
 );
 
--- properties
-create table properties (
+-- property
+create table property (
 	id serial primary key,
 	name varchar not null,
 	unique(name)
@@ -48,26 +49,26 @@ create table dbentry_software (
 	used boolean
 );
 
--- dbentry_properties, three variants: text, int and float
-create table dbentry_properties_int (
+-- dbentry_property, three variants: text, int and float
+create table dbentry_property_number (
 	id serial primary key,
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
-	property_id bigint references properties on delete cascade deferrable initially deferred,
-	value bigint not null
+	property_id bigint references property on delete cascade deferrable initially deferred,
+	value double precision not null
 );
 
-create table dbentry_properties_text (
+create table dbentry_property_string (
 	id serial primary key,
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
-	property_id bigint references properties on delete cascade deferrable initially deferred,
+	property_id bigint references property on delete cascade deferrable initially deferred,
 	value varchar not null
 );
 
-create table dbentry_properties_float (
+create table dbentry_property_boolean (
 	id serial primary key,
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
-	property_id bigint references properties on delete cascade deferrable initially deferred,
-	value double precision not null
+	property_id bigint references property on delete cascade deferrable initially deferred,
+	value boolean not null
 );
 
 -- permissions
@@ -76,7 +77,7 @@ alter table
 	software owner to "${owner}";
 
 alter table
-	properties owner to "${owner}";
+	property owner to "${owner}";
 
 alter table
 	dbentry owner to "${owner}";
@@ -85,10 +86,10 @@ alter table
 	dbentry_software owner to "${owner}";
 
 alter table
-	dbentry_properties_int owner to "${owner}";
+	dbentry_property_number owner to "${owner}";
 
 alter table
-	dbentry_properties_text owner to "${owner}";
+	dbentry_property_string owner to "${owner}";
 
 alter table
-	dbentry_properties_float owner to "${owner}";
+	dbentry_property_boolean owner to "${owner}";
