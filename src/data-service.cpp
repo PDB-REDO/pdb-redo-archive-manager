@@ -104,6 +104,30 @@ data_service::data_service()
 	}
 }
 
+// --------------------------------------------------------------------
+
+std::vector<Software> data_service::get_software() const
+{
+	std::vector<Software> result;
+
+	pqxx::work tx(db_connection::instance());
+
+	for (const auto &[name, version] : tx.stream<std::string,std::string>("SELECT name, version FROM software ORDER BY name, version"))
+	{
+		if (result.empty() or result.back().name != name)
+		{
+			result.emplace_back(Software{name, { version }});
+			continue;
+		}
+
+		result.back().versions.emplace_back(version);
+	}
+
+	return result;
+}
+
+// --------------------------------------------------------------------
+
 void data_service::reset()
 {
 	using namespace std::literals;

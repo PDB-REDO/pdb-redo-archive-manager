@@ -70,6 +70,21 @@ enum class PropertyType { Null, String, Number, Boolean };
 
 // --------------------------------------------------------------------
 
+struct Software
+{
+	std::string name;
+	std::vector<std::string> versions;
+
+	template<typename Archive>
+	void serialize(Archive& ar, unsigned long version)
+	{
+		ar & zeep::make_nvp("name", name)
+		   & zeep::make_nvp("versions", versions);
+	}
+};
+
+// --------------------------------------------------------------------
+
 class data_service
 {
   public:
@@ -123,6 +138,9 @@ class data_service
 			std::throw_with_nested(std::runtime_error("Undefined property " + name));
 		}
 	}
+
+	/// \brief Return the list of available programs
+	std::vector<Software> get_software() const;
 
   private:
 

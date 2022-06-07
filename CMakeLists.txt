@@ -146,13 +146,10 @@ target_compile_definitions(pramd
 # yarn rules for javascripts
 	
 set(webpack_input
-	${PROJECT_SOURCE_DIR}/webapp/admin.js
 	${PROJECT_SOURCE_DIR}/webapp/custom-bootstrap-theme.scss
 	${PROJECT_SOURCE_DIR}/webapp/index.js
-	${PROJECT_SOURCE_DIR}/webapp/login.js
 	${PROJECT_SOURCE_DIR}/webapp/pdb-redo-bootstrap.scss
-	${PROJECT_SOURCE_DIR}/webapp/request.js
-	${PROJECT_SOURCE_DIR}/webapp/test-api.js)
+	${PROJECT_SOURCE_DIR}/webapp/search.js)
 
 set(webpack_output ${PROJECT_SOURCE_DIR}/docroot/scripts/index.js)
 
@@ -165,7 +162,7 @@ add_custom_command(
 
 add_custom_target(webpack DEPENDS ${webpack_output})
 
-# add_dependencies(pramd webpack)
+add_dependencies(pramd webpack)
 
 if(USE_RSRC)
 	mrc_target_resources(pramd
