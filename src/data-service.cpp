@@ -281,9 +281,15 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 	// auto date_dp = sys_days(date_ymd);
 
 	auto &versions_data = versions["data"];
-	auto coordinates_revision_date_pdb = versions_data["coordinates_revision_date_pdb"].as<std::string>();
-	auto coordinates_revision_major_mmCIF = versions_data["coordinates_revision_major_mmCIF"].as<std::string>();
-	auto coordinates_revision_minor_mmCIF = versions_data["coordinates_revision_minor_mmCIF"].as<std::string>();
+	std::optional<std::string> coordinates_revision_date_pdb;
+	if (versions_data["coordinates_revision_date_pdb"].type() == zeep::json::element::value_type::string)
+		coordinates_revision_date_pdb = versions_data["coordinates_revision_date_pdb"].as<std::string>();
+	std::optional<std::string> coordinates_revision_major_mmCIF;
+	if (versions_data["coordinates_revision_major_mmCIF"].type() == zeep::json::element::value_type::string)
+		coordinates_revision_major_mmCIF = versions_data["coordinates_revision_major_mmCIF"].as<std::string>();
+	std::optional<std::string> coordinates_revision_minor_mmCIF;
+	if (versions_data["coordinates_revision_minor_mmCIF"].type() == zeep::json::element::value_type::string)
+		coordinates_revision_minor_mmCIF = versions_data["coordinates_revision_minor_mmCIF"].as<std::string>();
 	auto coordinates_edited = versions_data["coordinates_edited"].as<bool>();
 	auto reflections_revision = versions_data["reflections_revision"].as<std::string>();
 	auto reflections_edited = versions_data["reflections_edited"].as<bool>();

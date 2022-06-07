@@ -30,7 +30,7 @@ create table dbentry (
 	pdb_id varchar not null,
 	version_hash varchar not null,
 
-	coordinates_revision_date_pdb date not null,
+	coordinates_revision_date_pdb date,
 	coordinates_revision_major_mmCIF varchar,
 	coordinates_revision_minor_mmCIF varchar,
 	coordinates_edited boolean,
