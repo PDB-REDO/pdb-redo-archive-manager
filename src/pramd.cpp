@@ -195,18 +195,12 @@ int a_main(int argc, char* const argv[])
 		return 0;
 	}
 
-	std::string secret;
-	if (config.has("secret"))
-		secret = config.get("secret");
-	else
-	{
-		secret = zeep::encode_base64(zeep::random_hash());
-		std::cerr << "starting with created secret " << secret << std::endl;
-	}
-
-	zh::daemon server([secret]()
+	zh::daemon server([&config]()
 	{
 		auto s = new zeep::http::server{};
+
+		if (config.has("context"))
+			s->set_context_name(config.get("context"));
 
 		s->add_error_handler(new db_error_handler());
 
