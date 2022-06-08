@@ -7,3 +7,4 @@ base64-tabel.sh
 **/__pycache__/
 prsmd.conf
 build/
+pramd.conf
