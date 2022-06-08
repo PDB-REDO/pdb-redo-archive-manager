@@ -11,7 +11,7 @@
 		{
 			"name": "command",
 			"type": "string",
-			"desc": "Command, one of rescan, start, stop, status or reload",
+			"desc": "Command, one of reinit, rescan, start, stop, status or reload",
 			"position": 1
 		},
 		{

@@ -191,8 +191,6 @@ void data_service::reset()
 
 void data_service::rescan()
 {
-	reset();
-
 	auto &config = configuration::instance();
 
 	// --------------------------------------------------------------------
@@ -235,6 +233,9 @@ void data_service::rescan()
 				fs::path entry = l3->path();
 				std::string hash = entry.filename().string();
 
+				if (exists(pdb_id, hash))
+					continue;
+
 				try
 				{
 					std::ifstream versions_file(entry / "versions.json");
@@ -258,6 +259,23 @@ void data_service::rescan()
 
 		p0.consumed(1);
 	}
+}
+
+// --------------------------------------------------------------------
+
+bool data_service::exists(const std::string &pdb_id, const std::string &version_hash) const
+{
+	pqxx::work tx(db_connection::instance());
+
+	auto r = tx.exec1(
+		R"(select count(*)
+			 from dbentry
+			where pdb_id = )" + tx.quote(pdb_id) + R"(
+			  and version_hash = )" + tx.quote(version_hash));
+
+	tx.commit();
+
+	return r.front().as<size_t>() == 1;
 }
 
 // --------------------------------------------------------------------

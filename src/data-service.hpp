@@ -163,6 +163,9 @@ class data_service
 	std::vector<DbEntry> query_1(const std::string &program, const std::string &version, uint32_t page, uint32_t page_size);
 	size_t count_1(const std::string &program, const std::string &version);
 
+	/// \brief Return true if entry exists.
+	bool exists(const std::string &pdb_id, const std::string &version_hash) const;
+
   private:
 
 	data_service();
