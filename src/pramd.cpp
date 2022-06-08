@@ -26,35 +26,13 @@
 
 #include <zeep/config.hpp>
 
-// #include <functional>
-// #include <tuple>
-// #include <thread>
-// #include <condition_variable>
 #include <fstream>
 
-// #include <boost/algorithm/string.hpp>
-
-// #include <boost/uuid/uuid.hpp>
-// #include <boost/uuid/uuid_generators.hpp>
-// #include <boost/uuid/uuid_io.hpp>
-
-// #include <boost/date_time/posix_time/posix_time.hpp>
-// #include <boost/date_time/gregorian/gregorian.hpp>
-// #include <boost/date_time/local_time/local_time.hpp>
-// #include <boost/random/random_device.hpp>
-
-// #include <zeep/crypto.hpp>
 #include <zeep/http/daemon.hpp>
 #include <zeep/http/rest-controller.hpp>
 #include <zeep/http/html-controller.hpp>
 #include <zeep/http/security.hpp>
 #include <zeep/http/login-controller.hpp>
-// #include <zeep/http/uri.hpp>
-
-// #include <pqxx/pqxx>
-
-// #include "user-service.hpp"
-// #include "run-service.hpp"
 
 #include "configuration.hpp"
 #include "data-service.hpp"
@@ -68,6 +46,9 @@ namespace ba = boost::algorithm;
 namespace pt = boost::posix_time;
 
 using json = zeep::json::element;
+
+const int
+	kPageSize = 10;
 
 // --------------------------------------------------------------------
 
@@ -109,12 +90,15 @@ class pram_html_controller : public zh::html_controller
 		mount("", &pram_html_controller::welcome);
 
 		mount("search", &pram_html_controller::search);
+		mount("entries-table", &pram_html_controller::entries_table);
 
 		mount("{css,scripts,fonts,images}/", &pram_html_controller::handle_file);
 	}
 
 	void welcome(const zh::request& request, const zh::scope& scope, zh::reply& reply);
 	void search(const zh::request& request, const zh::scope& scope, zh::reply& reply);
+
+	void entries_table(const zh::request& request, const zh::scope& scope, zh::reply& reply);
 };
 
 void pram_html_controller::welcome(const zh::request& request, const zh::scope& scope, zh::reply& reply)
@@ -124,14 +108,17 @@ void pram_html_controller::welcome(const zh::request& request, const zh::scope& 
 
 void pram_html_controller::search(const zh::request& request, const zh::scope& scope, zh::reply& reply)
 {
+	using json = zeep::json::element;
+
 	zh::scope sub(scope);
+	auto &ds = data_service::instance();
 
 	std::string
 		program = request.get_parameter("program"),
 		version = request.get_parameter("version");
 
-	auto software = data_service::instance().get_software();
-	zeep::json::element se;
+	auto software = ds.get_software();
+	json se;
 	to_element(se, software);
 	sub.put("software", se);
 
@@ -139,7 +126,43 @@ void pram_html_controller::search(const zh::request& request, const zh::scope& s
 	sub.put("version", version);
 	sub.put("programIx", std::find_if(software.begin(), software.end(), [program](Software &sw) { return sw.name == program; }) - software.begin());
 
+	int page = request.get_parameter("page", 0);
+
+	if (not (program.empty() or version.empty()))
+	{
+		json entries;
+		auto dbentries = ds.query_1(program, version, page, kPageSize);
+		to_element(entries, dbentries);
+		sub.put("entries", entries);
+
+		sub.put("entry-count", ds.count_1(program, version));
+		sub.put("page-size", kPageSize);
+		sub.put("page", 1);
+	}
+
 	get_template_processor().create_reply_from_template("search", sub, reply);
+}
+
+void pram_html_controller::entries_table(const zh::request& request, const zh::scope& scope, zh::reply& reply)
+{
+	int page = request.get_parameter("page", 0);
+
+	using json = zeep::json::element;
+
+	zh::scope sub(scope);
+
+	auto &ds = data_service::instance();
+
+	std::string
+		program = request.get_parameter("program"),
+		version = request.get_parameter("version");
+
+	json entries;
+	auto dbentries = ds.query_1(program, version, page, kPageSize);
+	to_element(entries, dbentries);
+	sub.put("entries", entries);
+
+	return get_template_processor().create_reply_from_template("search::entries-table-fragment", sub, reply);
 }
 
 // --------------------------------------------------------------------

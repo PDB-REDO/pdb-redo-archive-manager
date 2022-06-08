@@ -1,4 +1,11 @@
 
+export function construct_query() {
+	const programSelector = document.getElementById('inputProgramName');
+	const versionSelector = document.getElementById('inputProgramVersion');
+
+	return `program=${encodeURIComponent(programSelector.value)}&version=${encodeURIComponent(versionSelector.value)}`;
+}
+
 function updateVersionSelector() {
 
 	const programSelector = document.getElementById('inputProgramName');

@@ -10,6 +10,7 @@ module.exports = (env) => {
 	const webpackConf = {
 		entry: {
 			index: SCRIPTS + "index.js",
+			lists: SCRIPTS + "lists.js",
 			search: SCRIPTS + "search.js"
 		},
 

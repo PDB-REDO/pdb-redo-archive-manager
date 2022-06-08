@@ -587,3 +587,47 @@ fs::path data_service::get_path(const std::string &pdb_id, const std::string &ha
 	}
 }
 
+// --------------------------------------------------------------------
+
+std::vector<DbEntry> data_service::query_1(const std::string &program, const std::string &version, uint32_t page, uint32_t page_size)
+{
+	pqxx::work tx(db_connection::instance());
+
+	std::vector<DbEntry> entries;
+	for (auto const& [pdb_id, version_hash]:
+		tx.stream<std::string,std::string>(
+		R"(select e.pdb_id,
+				  e.version_hash
+			 from dbentry e
+			 join dbentry_software es on es.dbentry_id = e.id
+			 join software s on es.software_id = s.id
+			where s.name = )" + tx.quote(program) + R"(
+			  and s.version = )" + tx.quote(version) + R"(
+			order by e.pdb_id, e.coordinates_revision_date_pdb
+		   offset )" + std::to_string(page * page_size) + R"( rows
+			fetch first )" + std::to_string(page_size) + R"( rows only)"))
+	{
+		entries.emplace_back(DbEntry{ pdb_id, version_hash });
+	}
+
+	tx.commit();
+
+	return entries;
+}
+
+size_t data_service::count_1(const std::string &program, const std::string &version)
+{
+	pqxx::work tx(db_connection::instance());
+
+	auto r = tx.exec1(
+		R"(select count(*)
+			 from dbentry e
+			 join dbentry_software es on es.dbentry_id = e.id
+			 join software s on es.software_id = s.id
+			where s.name = )" + tx.quote(program) + R"(
+			  and s.version = )" + tx.quote(version));
+
+	tx.commit();
+
+	return r.front().as<size_t>();
+}

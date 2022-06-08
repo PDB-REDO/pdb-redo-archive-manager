@@ -148,8 +148,8 @@ target_compile_definitions(pramd
 # yarn rules for javascripts
 	
 set(webpack_input
-	${PROJECT_SOURCE_DIR}/webapp/custom-bootstrap-theme.scss
 	${PROJECT_SOURCE_DIR}/webapp/index.js
+	${PROJECT_SOURCE_DIR}/webapp/lists.js
 	${PROJECT_SOURCE_DIR}/webapp/pdb-redo-bootstrap.scss
 	${PROJECT_SOURCE_DIR}/webapp/search.js)
 

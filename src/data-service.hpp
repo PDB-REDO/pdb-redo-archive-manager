@@ -85,6 +85,21 @@ struct Software
 
 // --------------------------------------------------------------------
 
+struct DbEntry
+{
+	std::string pdb_id;
+	std::string version_hash;
+
+	template<typename Archive>
+	void serialize(Archive& ar, unsigned long version)
+	{
+		ar & zeep::make_nvp("id", pdb_id)
+		   & zeep::make_nvp("hash", version_hash);
+	}
+};
+
+// --------------------------------------------------------------------
+
 class data_service
 {
   public:
@@ -141,6 +156,12 @@ class data_service
 
 	/// \brief Return the list of available programs
 	std::vector<Software> get_software() const;
+
+	// --------------------------------------------------------------------
+	
+	/// \brief Query the data
+	std::vector<DbEntry> query_1(const std::string &program, const std::string &version, uint32_t page, uint32_t page_size);
+	size_t count_1(const std::string &program, const std::string &version);
 
   private:
 
