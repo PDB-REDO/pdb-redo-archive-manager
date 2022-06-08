@@ -594,6 +594,13 @@ std::vector<DbEntry> data_service::query_1(const std::string &program, const std
 	pqxx::work tx(db_connection::instance());
 
 	std::vector<DbEntry> entries;
+
+	std::string version_clause;
+	if (version == "undefined")
+		version_clause = "is null";
+	else
+		version_clause = "= " + tx.quote(version);
+
 	for (auto const& [pdb_id, version_hash]:
 		tx.stream<std::string,std::string>(
 		R"(select e.pdb_id,
@@ -602,7 +609,7 @@ std::vector<DbEntry> data_service::query_1(const std::string &program, const std
 			 join dbentry_software es on es.dbentry_id = e.id
 			 join software s on es.software_id = s.id
 			where s.name = )" + tx.quote(program) + R"(
-			  and s.version = )" + tx.quote(version) + R"(
+			  and s.version )" + version_clause + R"(
 			order by e.pdb_id, e.coordinates_revision_date_pdb
 		   offset )" + std::to_string(page * page_size) + R"( rows
 			fetch first )" + std::to_string(page_size) + R"( rows only)"))
@@ -619,13 +626,19 @@ size_t data_service::count_1(const std::string &program, const std::string &vers
 {
 	pqxx::work tx(db_connection::instance());
 
+	std::string version_clause;
+	if (version == "undefined")
+		version_clause = "is null";
+	else
+		version_clause = "= " + tx.quote(version);
+
 	auto r = tx.exec1(
 		R"(select count(*)
 			 from dbentry e
 			 join dbentry_software es on es.dbentry_id = e.id
 			 join software s on es.software_id = s.id
 			where s.name = )" + tx.quote(program) + R"(
-			  and s.version = )" + tx.quote(version));
+			  and s.version )" + version_clause);
 
 	tx.commit();
 

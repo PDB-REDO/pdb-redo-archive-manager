@@ -65,7 +65,9 @@
 		</div>
 
 
-		<div class="row">
+		<div class="row mt-5" z:if="${entries}">
+
+			<p>The search resulted in <span z:text="#numbers.formatDecimal(entry-count, 1, 0)"></span> entries.</p>
 
 			<table class="table table-sm table-hover mt-3" id="entries-table" z:fragment="entries-table-fragment">
 				<thead>
