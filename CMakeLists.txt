@@ -116,6 +116,8 @@ list(APPEND REQUIRED_LIBRARIES ${STDCPPATOMIC_LIBRARY})
 set(ENV{PKG_CONFIG_PATH} "$ENV{HOME}/.local/lib/pkgconfig/")
 pkg_check_modules(PKG_PQ REQUIRED IMPORTED_TARGET libpq libpqxx>=7.2)
 
+find_package(LibArchive REQUIRED)
+
 find_program(YARN yarn REQUIRED)
 
 find_package(zeep 5.1.4 REQUIRED)
@@ -174,7 +176,7 @@ if(USE_RSRC)
 endif()
 
 target_include_directories(pramd PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR} ${PQ_INCLUDE_DIRS})
-target_link_libraries(pramd date::date zeep::zeep std::filesystem Boost::program_options Boost::iostreams PkgConfig::PKG_PQ ${REQUIRED_LIBRARIES})
+target_link_libraries(pramd date::date zeep::zeep std::filesystem Boost::program_options Boost::iostreams PkgConfig::PKG_PQ LibArchive::LibArchive ${REQUIRED_LIBRARIES})
 
 install(TARGETS pramd
     RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}

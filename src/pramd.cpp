@@ -77,7 +77,7 @@ class api_rest_controller : public zh::rest_controller
 {
   public:
 	api_rest_controller()
-		: zh::rest_controller("archive")
+		: zh::rest_controller("v1")
 	{
 		// get a file
 		map_get_request("file/{id}/{hash}/{type}", &api_rest_controller::get_file, "id", "hash", "type");

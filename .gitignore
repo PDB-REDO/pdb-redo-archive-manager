@@ -8,3 +8,4 @@ base64-tabel.sh
 prsmd.conf
 build/
 pramd.conf
+yarn-error.log
