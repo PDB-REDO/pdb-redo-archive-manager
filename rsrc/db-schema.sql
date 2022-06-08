@@ -1,16 +1,11 @@
 -- clean up first
+
 drop table if exists dbentry_property_number cascade;
-
 drop table if exists dbentry_property_string cascade;
-
 drop table if exists dbentry_property_boolean cascade;
-
 drop table if exists property cascade;
-
 drop table if exists dbentry_software cascade;
-
 drop table if exists software cascade;
-
 drop table if exists dbentry cascade;
 
 -- software
@@ -33,41 +28,49 @@ create table dbentry (
 	id serial primary key,
 	pdb_id varchar not null,
 	version_hash varchar not null,
+
 	coordinates_revision_date_pdb date,
 	coordinates_revision_major_mmCIF varchar,
 	coordinates_revision_minor_mmCIF varchar,
 	coordinates_edited boolean,
 	reflections_revision varchar,
 	reflections_edited boolean,
-	created timestamp with time zone default current_timestamp not null
+
+	created timestamp with time zone default current_timestamp not null,
+	unique(pdb_id, version_hash)
 );
 
 -- dbentry_software
 create table dbentry_software (
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
-	software_id bigint references software on delete cascade deferrable initially deferred
+	software_id bigint references software on delete cascade deferrable initially deferred,
+	primary key(dbentry_id, software_id)
 );
 
 -- dbentry_property, three variants: text, int and float
 create table dbentry_property_number (
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
 	property_id bigint references property on delete cascade deferrable initially deferred,
-	value double precision not null
+	value double precision not null,
+	primary key(dbentry_id, property_id)
 );
 
 create table dbentry_property_string (
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
 	property_id bigint references property on delete cascade deferrable initially deferred,
-	value varchar not null
+	value varchar not null,
+	primary key(dbentry_id, property_id)
 );
 
 create table dbentry_property_boolean (
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
 	property_id bigint references property on delete cascade deferrable initially deferred,
-	value boolean not null
+	value boolean not null,
+	primary key(dbentry_id, property_id)
 );
 
 -- permissions
+
 alter table
 	software owner to "${owner}";
 

@@ -134,7 +134,7 @@ std::vector<Software> data_service::get_software() const
 
 // --------------------------------------------------------------------
 
-void data_service::reset(int stage)
+void data_service::reset()
 {
 	using namespace std::literals;
 
@@ -167,7 +167,7 @@ void data_service::reset(int stage)
 	// --------------------------------------------------------------------
 	
 	// the schema
-	mrsrc::rsrc schema("db-schema-stage-" + std::to_string(stage) + ".sql");
+	mrsrc::rsrc schema("db-schema.sql");
 	if (not schema)
 		throw std::runtime_error("Missing schema resource");
 
@@ -191,7 +191,7 @@ void data_service::reset(int stage)
 
 void data_service::rescan()
 {
-	reset(1);
+	reset();
 
 	auto &config = configuration::instance();
 
@@ -258,8 +258,6 @@ void data_service::rescan()
 
 		p0.consumed(1);
 	}
-
-	reset(2);
 }
 
 // --------------------------------------------------------------------

@@ -200,6 +200,12 @@ int a_main(int argc, char* const argv[])
 
 	auto command = config.get("command");
 
+	if (command == "reinit")
+	{
+		data_service::reset();
+		return 0;
+	}
+
 	if (not config.has("pdb-redo-dir"))
 	{
 		std::cerr << "Missing pdb-redo-dir option" << std::endl;
