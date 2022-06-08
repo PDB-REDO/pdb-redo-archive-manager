@@ -170,7 +170,8 @@ if(USE_RSRC)
 	mrc_target_resources(pramd
 		${PROJECT_SOURCE_DIR}/docroot/
 		${PROJECT_SOURCE_DIR}/rsrc/configuration.json
-		${PROJECT_SOURCE_DIR}/rsrc/db-schema.sql
+		${PROJECT_SOURCE_DIR}/rsrc/db-schema-stage-1.sql
+		${PROJECT_SOURCE_DIR}/rsrc/db-schema-stage-2.sql
 		${PROJECT_SOURCE_DIR}/rsrc/data.json.schema
 	)
 endif()

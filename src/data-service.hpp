@@ -103,9 +103,6 @@ struct DbEntry
 class data_service
 {
   public:
-	/// \brief Wipe databank if it exists and create new based on info in config
-	static void reset();
-
 	/// \brief Return the singleton instance of data_service, will init one if it doesn't exist.
 	static data_service &instance()
 	{
@@ -164,6 +161,9 @@ class data_service
 	size_t count_1(const std::string &program, const std::string &version);
 
   private:
+
+	/// \brief Wipe databank if it exists and create new based on info in config
+	static void reset(int stage);
 
 	data_service();
 	data_service(const data_service &) = delete;
