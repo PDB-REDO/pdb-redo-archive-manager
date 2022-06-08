@@ -1,10 +1,9 @@
 -- clean up first
 
-drop table if exists dbentry_property cascade;
-drop table if exists property cascade;
 drop table if exists dbentry_property_number cascade;
 drop table if exists dbentry_property_string cascade;
 drop table if exists dbentry_property_boolean cascade;
+drop table if exists property cascade;
 drop table if exists dbentry_software cascade;
 drop table if exists software cascade;
 drop table if exists dbentry cascade;
@@ -13,7 +12,7 @@ drop table if exists dbentry cascade;
 create table software (
 	id serial primary key,
 	name varchar not null,
-	version varchar not null,
+	version varchar,
 	unique(name, version)
 );
 
@@ -43,32 +42,31 @@ create table dbentry (
 
 -- dbentry_software
 create table dbentry_software (
-	id serial primary key,
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
 	software_id bigint references software on delete cascade deferrable initially deferred,
-	used boolean
+	primary key(dbentry_id, software_id)
 );
 
 -- dbentry_property, three variants: text, int and float
 create table dbentry_property_number (
-	id serial primary key,
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
 	property_id bigint references property on delete cascade deferrable initially deferred,
-	value double precision not null
+	value double precision not null,
+	primary key(dbentry_id, property_id)
 );
 
 create table dbentry_property_string (
-	id serial primary key,
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
 	property_id bigint references property on delete cascade deferrable initially deferred,
-	value varchar not null
+	value varchar not null,
+	primary key(dbentry_id, property_id)
 );
 
 create table dbentry_property_boolean (
-	id serial primary key,
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
 	property_id bigint references property on delete cascade deferrable initially deferred,
-	value boolean not null
+	value boolean not null,
+	primary key(dbentry_id, property_id)
 );
 
 -- permissions

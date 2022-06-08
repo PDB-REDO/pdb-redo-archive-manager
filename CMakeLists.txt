@@ -112,9 +112,9 @@ list(APPEND REQUIRED_LIBRARIES ${STDCPPFS_LIBRARY})
 include(FindAtomic)
 list(APPEND REQUIRED_LIBRARIES ${STDCPPATOMIC_LIBRARY})
 
-pkg_check_modules(PQ libpq REQUIRED)
-pkg_check_modules(PQXX libpqxx>=7.2 REQUIRED)
-list(APPEND REQUIRED_LIBRARIES ${PQXX_LIBRARIES} ${PQ_LIBRARIES})
+# I tend to install libpqxx in my $HOME/.local, but sometimes pkg-config/cmake cannot find it there
+set(ENV{PKG_CONFIG_PATH} "$ENV{HOME}/.local/lib/pkgconfig/")
+pkg_check_modules(PKG_PQ REQUIRED IMPORTED_TARGET libpq libpqxx>=7.2)
 
 find_program(YARN yarn REQUIRED)
 
@@ -174,7 +174,7 @@ if(USE_RSRC)
 endif()
 
 target_include_directories(pramd PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR} ${PQ_INCLUDE_DIRS})
-target_link_libraries(pramd date::date zeep::zeep std::filesystem Boost::program_options Boost::iostreams ${REQUIRED_LIBRARIES})
+target_link_libraries(pramd date::date zeep::zeep std::filesystem Boost::program_options Boost::iostreams PkgConfig::PKG_PQ ${REQUIRED_LIBRARIES})
 
 install(TARGETS pramd
     RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}

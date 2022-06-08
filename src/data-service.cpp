@@ -112,15 +112,15 @@ std::vector<Software> data_service::get_software() const
 
 	pqxx::work tx(db_connection::instance());
 
-	for (const auto &[name, version] : tx.stream<std::string,std::string>("SELECT name, version FROM software ORDER BY name, version"))
+	for (const auto &[name, version] : tx.stream<std::string,std::optional<std::string>>("SELECT name, version FROM software ORDER BY name, version"))
 	{
 		if (result.empty() or result.back().name != name)
 		{
-			result.emplace_back(Software{name, { version }});
+			result.emplace_back(Software{name, { version.value_or("undefined") }});
 			continue;
 		}
 
-		result.back().versions.emplace_back(version);
+		result.back().versions.emplace_back(version.value_or("undefined"));
 	}
 
 	return result;
@@ -202,8 +202,6 @@ void data_service::rescan()
 
 	progress p0("scanning", n);
 
-	std::vector<fs::path> attics;
-
 	for (fs::directory_iterator l1(pdbRedoDir); l1 != fs::directory_iterator(); ++l1)
 	{
 		if (not l1->is_directory() or l1->path().filename().string().length() != 2)
@@ -214,7 +212,9 @@ void data_service::rescan()
 			if (not l2->is_directory())
 				continue;
 
-			p0.message(l2->path().filename().string());
+			std::string pdb_id = l2->path().filename().string();
+
+			p0.message(pdb_id);
 
 			fs::path attic = l2->path() / "attic";
 
@@ -226,42 +226,31 @@ void data_service::rescan()
 				if (not l3->is_directory() or not fs::exists(l3->path() / "versions.json"))
 					continue;
 
-				attics.emplace_back(l3->path());
+				fs::path entry = l3->path();
+				std::string hash = entry.filename().string();
+
+				try
+				{
+					std::ifstream versions_file(entry / "versions.json");
+					zeep::json::element versions;
+					parse_json(versions_file, versions);
+
+					std::ifstream data_file(entry / "data.json");
+					zeep::json::element data;
+					parse_json(data_file, data);
+
+					insert(pdb_id, hash, data, versions);
+				}
+				catch (const std::exception &ex)
+				{
+					std::cerr << std::endl
+							  << "Error importing " << pdb_id << '/' << hash << std::endl
+							  << ex.what() << std::endl;
+				}
 			}
 		}
 
 		p0.consumed(1);
-	}
-
-	// --------------------------------------------------------------------
-
-	progress p("Importing entries", attics.size());
-
-	for (auto &attic : attics)
-	{
-		std::string pdb_id = attic.parent_path().parent_path().filename().string();
-		std::string hash = attic.filename().string();
-
-		p.message(pdb_id);
-
-		try
-		{
-			std::ifstream versions_file(attic / "versions.json");
-			zeep::json::element versions;
-			parse_json(versions_file, versions);
-
-			std::ifstream data_file(attic / "data.json");
-			zeep::json::element data;
-			parse_json(data_file, data);
-
-			insert(pdb_id, hash, data, versions);
-		}
-		catch (const std::exception &ex)
-		{
-			std::cerr << ex.what() << std::endl;
-		}
-
-		p.consumed(1);
 	}
 }
 
@@ -273,12 +262,6 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 
 	using namespace date;
 	using namespace std::chrono;
-
-
-	// std::istringstream date_ss{data["properties"]["TIME"].as<std::string>()};
-	// year_month_day date_ymd{};
-	// from_stream(date_ss, "%F", date_ymd);
-	// auto date_dp = sys_days(date_ymd);
 
 	auto &versions_data = versions["data"];
 	std::optional<std::string> coordinates_revision_date_pdb;
@@ -312,16 +295,28 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 	auto &software = versions["software"];
 	for (auto software_it = software.begin(); software_it != software.end(); ++software_it)
 	{
-		auto program = software_it.key();
-		auto version = software_it.value()["version"].as<std::string>();
 		auto used = software_it.value()["used"].as<bool>();
+		if (not used)
+			continue;
+
+		auto program = software_it.key();
+
+		std::optional<std::string> version;
+		if (software_it.value()["version"].type() == zeep::json::element::value_type::string)
+		{
+			version = software_it.value()["version"].as<std::string>();
+			if (version == "null")
+				version.reset();
+		}
 
 		int software_id;
 
 		try
 		{
 			pqxx::subtransaction txs(tx);
-			auto r = txs.exec1("SELECT id FROM software WHERE name = " + tx.quote(program) + " AND version = " + tx.quote(version));
+			auto r = version ?
+				txs.exec1("SELECT id FROM software WHERE name = " + tx.quote(program) + " AND version = " + tx.quote(version)) :
+				txs.exec1("SELECT id FROM software WHERE name = " + tx.quote(program) + " AND version IS NULL");
 			std::tie(software_id) = r.as<int>();
 			txs.commit();
 		}
@@ -334,7 +329,7 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 		}
 		
 		pqxx::subtransaction txs2(tx);
-		txs2.exec("INSERT INTO dbentry_software (dbentry_id, software_id, used) VALUES (" + tx.quote(id) + ", " + tx.quote(software_id) + ", " + tx.quote(used) + ")");
+		txs2.exec("INSERT INTO dbentry_software (dbentry_id, software_id) VALUES (" + tx.quote(id) + ", " + tx.quote(software_id) + ")");
 		txs2.commit();
 	}
 
