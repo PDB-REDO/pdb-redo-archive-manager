@@ -176,7 +176,8 @@ if(USE_RSRC)
 endif()
 
 target_include_directories(pramd PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR} ${PQ_INCLUDE_DIRS})
-target_link_libraries(pramd date::date zeep::zeep std::filesystem Boost::program_options Boost::iostreams PkgConfig::PKG_PQ LibArchive::LibArchive ${REQUIRED_LIBRARIES})
+target_link_libraries(pramd	-static-libgcc -static-libstdc++
+	date::date zeep::zeep std::filesystem Boost::program_options Boost::iostreams PkgConfig::PKG_PQ LibArchive::LibArchive ${REQUIRED_LIBRARIES})
 
 install(TARGETS pramd
     RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}
