@@ -26,428 +26,48 @@
 
 #include <zeep/config.hpp>
 
-// #include <functional>
-// #include <tuple>
-// #include <thread>
-// #include <condition_variable>
 #include <fstream>
 
-// #include <boost/algorithm/string.hpp>
-
-// #include <boost/uuid/uuid.hpp>
-// #include <boost/uuid/uuid_generators.hpp>
-// #include <boost/uuid/uuid_io.hpp>
-
-// #include <boost/date_time/posix_time/posix_time.hpp>
-// #include <boost/date_time/gregorian/gregorian.hpp>
-// #include <boost/date_time/local_time/local_time.hpp>
-// #include <boost/random/random_device.hpp>
-
-// #include <zeep/crypto.hpp>
 #include <zeep/http/daemon.hpp>
 #include <zeep/http/rest-controller.hpp>
 #include <zeep/http/html-controller.hpp>
 #include <zeep/http/security.hpp>
 #include <zeep/http/login-controller.hpp>
-// #include <zeep/http/uri.hpp>
-
-// #include <pqxx/pqxx>
-
-// #include "user-service.hpp"
-// #include "run-service.hpp"
-// #include "prsm-db-connection.hpp"
 
 #include "configuration.hpp"
 #include "data-service.hpp"
-#include "revision.hpp"
+#include "db-connection.hpp"
 
 #include "mrsrc.hpp"
 
 namespace zh = zeep::http;
 namespace fs = std::filesystem;
 namespace ba = boost::algorithm;
-namespace po = boost::program_options;
 namespace pt = boost::posix_time;
 
 using json = zeep::json::element;
+
+const int
+	kPageSize = 10;
 
 // --------------------------------------------------------------------
 
 #define APP_NAME "pramd"
 
-// const std::string
-// 	kPDB_REDO_Session_Realm("PDB-REDO Session Management"),
-// 	kPDB_REDO_API_Realm("PDB-REDO API"),
-// 	kPDB_REDO_API_Cookie("PDB-REDO-Signature"),
-// 	kPDB_REDO_Cookie("PDB-REDO_Session");
-
-fs::path gExePath;
-
-// // --------------------------------------------------------------------
-
-// struct Session
-// {
-// 	unsigned long id = 0;
-// 	std::string name;
-// 	std::string user;
-// 	std::string token;
-// 	boost::posix_time::ptime created;
-// 	boost::posix_time::ptime expires;
-
-// 	Session& operator=(const pqxx::row& row)
-// 	{
-// 		id			= row.at("id").as<unsigned long>();
-// 		name		= row.at("name").as<std::string>();
-// 		user		= row.at("user").as<std::string>();
-// 		token		= row.at("token").as<std::string>();
-// 		created		= zeep::value_serializer<boost::posix_time::ptime>::from_string(row.at("created").as<std::string>());
-// 		expires		= zeep::value_serializer<boost::posix_time::ptime>::from_string(row.at("expires").as<std::string>());
-
-// 		return *this;
-// 	}
-
-// 	operator bool() const	{ return id != 0; }
-
-// 	bool expired() const	{ return pt::second_clock::universal_time() > expires; }
-
-// 	template<typename Archive>
-// 	void serialize(Archive& ar, unsigned long version)
-// 	{
-// 		ar & zeep::make_nvp("id", id)
-// 		   & zeep::make_nvp("name", name)
-// 		   & zeep::make_nvp("user", user)
-// 		   & zeep::make_nvp("token", token)
-// 		   & zeep::make_nvp("created", created)
-// 		   & zeep::make_nvp("expires", expires);
-// 	}
-// };
-
-// struct CreateSessionResult
-// {
-// 	unsigned long id = 0;
-// 	std::string name;
-// 	std::string token;
-// 	boost::posix_time::ptime expires;
-
-// 	CreateSessionResult(const Session& session)
-// 		: id(session.id)
-// 		, name(session.name)
-// 		, token(session.token)
-// 		, expires(session.expires)
-// 	{
-// 	}
-
-// 	CreateSessionResult(const pqxx::row& row)
-// 		: id(row.at("id").as<unsigned long>())
-// 		, name(row.at("name").as<std::string>())
-// 		, token(row.at("token").as<std::string>())
-// 		, expires(zeep::value_serializer<boost::posix_time::ptime>::from_string(row.at("expires").as<std::string>()))
-// 	{
-// 	}
-
-// 	CreateSessionResult& operator=(const Session& session)
-// 	{
-// 		id = session.id;
-// 		name = session.name;
-// 		token = session.token;
-// 		expires = session.expires;
-		
-// 		return *this;
-// 	}
-
-// 	CreateSessionResult& operator=(const pqxx::row& row)
-// 	{
-// 		id			= row.at("id").as<unsigned long>();
-// 		name		= row.at("name").as<std::string>();
-// 		token		= row.at("token").as<std::string>();
-// 		expires		= zeep::value_serializer<boost::posix_time::ptime>::from_string(row.at("expires").as<std::string>());
-
-// 		return *this;
-// 	}
-
-// 	operator bool() const	{ return id != 0; }
-
-// 	bool expired() const	{ return pt::second_clock::universal_time() > expires; }
-
-// 	template<typename Archive>
-// 	void serialize(Archive& ar, unsigned long version)
-// 	{
-// 		ar & zeep::make_nvp("id", id)
-// 		   & zeep::make_nvp("name", name)
-// 		   & zeep::make_nvp("token", token)
-// 		   & zeep::make_nvp("expires", expires);
-// 	}
-// };
-
-// // --------------------------------------------------------------------
-
-// class SessionStore
-// {
-//   public:
-
-// 	static void init()
-// 	{
-// 		sInstance = new SessionStore();
-// 	}
-
-// 	static SessionStore& instance()
-// 	{
-// 		return *sInstance;
-// 	}
-
-// 	void stop()
-// 	{
-// 		delete sInstance;
-// 		sInstance = nullptr;
-// 	}
-
-// 	Session create(const std::string& name, const std::string& user);
-
-// 	Session get_by_id(unsigned long id);
-// 	Session get_by_token(const std::string& token);
-// 	void delete_by_id(unsigned long id);
-
-// 	std::vector<Session> get_all_sessions();
-
-//   private:
-
-// 	SessionStore();
-// 	~SessionStore();
-
-// 	SessionStore(const SessionStore&) = delete;
-// 	SessionStore& operator=(const SessionStore&) = delete;
-
-// 	void run_clean_thread();
-
-// 	bool m_done = false;
-
-// 	std::condition_variable m_cv;
-// 	std::mutex m_cv_m;
-// 	std::thread m_clean;
-
-// 	static SessionStore* sInstance;
-// };
-
-// SessionStore* SessionStore::sInstance = nullptr;
-
-// SessionStore::SessionStore()
-// 	: m_clean(std::bind(&SessionStore::run_clean_thread, this))
-// {
-// }
-
-// SessionStore::~SessionStore()
-// {
-// 	{
-// 		std::lock_guard<std::mutex> lock(m_cv_m);
-// 		m_done = true;
-// 		m_cv.notify_one();
-// 	}
-
-// 	m_clean.join();
-// }
-
-// void SessionStore::run_clean_thread()
-// {
-// 	while (not m_done)
-// 	{
-// 		std::unique_lock<std::mutex> lock(m_cv_m);
-// 		if (m_cv.wait_for(lock, std::chrono::seconds(60)) == std::cv_status::timeout)
-// 		{
-// 			try
-// 			{
-// 				pqxx::transaction tx(prsm_db_connection::instance());
-// 				auto r = tx.exec0(R"(DELETE FROM session WHERE CURRENT_TIMESTAMP > expires)");
-// 				tx.commit();
-// 			}
-// 			catch (const std::exception& ex)
-// 			{
-// 				std::cerr << ex.what() << std::endl;
-// 			}
-// 		}
-// 	}
-// }
-
-// Session SessionStore::create(const std::string& name, const std::string& user)
-// {
-// 	User u = UserService::instance().get_user(user);
-
-// 	pqxx::transaction tx(prsm_db_connection::instance());
-
-// 	std::string token = zeep::encode_base64url(zeep::random_hash());
-
-// 	auto r = tx.exec1(
-// 		R"(INSERT INTO session (user_id, name, token)
-// 		   VALUES ()" + std::to_string(u.id) + ", " + tx.quote(name) + ", " + tx.quote(token) + R"()
-// 		   RETURNING id, name, token, trim(both '"' from to_json(created)::text) AS created,
-// 			   trim(both '"' from to_json(expires)::text) AS expires)");
-
-// 	unsigned long tokenid = r[0].as<unsigned long>();
-// 	std::string created = r[1].as<std::string>();
-
-// 	tx.commit();
-	
-// 	return
-// 	{
-// 		tokenid,
-// 		name,
-// 		user,
-// 		token,
-// 		zeep::value_serializer<boost::posix_time::ptime>::from_string(created)
-// 	};
-// }
-
-// Session SessionStore::get_by_id(unsigned long id)
-// {
-// 	pqxx::transaction tx(prsm_db_connection::instance());
-// 	auto r = tx.exec(
-// 		R"(SELECT a.id,
-// 				  a.name AS name,
-// 				  b.name AS user,
-// 				  a.token,
-// 				  trim(both '"' from to_json(a.created)::text) AS created,
-// 				  trim(both '"' from to_json(a.expires)::text) AS expires
-// 		   FROM session a LEFT JOIN auth_user b ON a.user_id = b.id
-// 		   WHERE a.id = )" + std::to_string(id));
-
-// 	Session result = {};
-// 	if (r.size() == 1)
-// 		result = r.front();
-
-// 	tx.commit();
-	
-// 	return result;
-// }
-
-// Session SessionStore::get_by_token(const std::string& token)
-// {
-// 	pqxx::transaction tx(prsm_db_connection::instance());
-// 	auto r = tx.exec(
-// 		R"(SELECT a.id,
-// 				  a.name AS name,
-// 				  b.name AS user,
-// 				  a.token,
-// 				  trim(both '"' from to_json(a.created)::text) AS created,
-// 				  trim(both '"' from to_json(a.expires)::text) AS expires
-// 		   FROM session a LEFT JOIN auth_user b ON a.user_id = b.id
-// 		   WHERE a.token = )" + tx.quote(token));
-
-// 	Session result = {};
-// 	if (r.size() == 1)
-// 		result = r.front();
-
-// 	tx.commit();
-	
-// 	return result;
-// }
-
-// void SessionStore::delete_by_id(unsigned long id)
-// {
-// 	pqxx::transaction tx(prsm_db_connection::instance());
-// 	auto r = tx.exec0(R"(DELETE FROM session WHERE id = )" + std::to_string(id));
-// 	tx.commit();
-// }
-
-// std::vector<Session> SessionStore::get_all_sessions()
-// {
-// 	std::vector<Session> result;
-
-// 	pqxx::transaction tx(prsm_db_connection::instance());
-
-// 	auto rows = tx.exec(
-// 		R"(SELECT a.id AS id,
-// 				  trim(both '"' from to_json(a.created)::text) AS created,
-// 				  trim(both '"' from to_json(a.expires)::text) AS expires,
-// 				  a.name AS name,
-// 				  b.name AS user,
-// 				  a.token AS token
-// 			 FROM session a, auth_user b
-// 			WHERE a.user_id = b.id
-// 			ORDER BY a.created ASC)");
-
-// 	for (auto row: rows)
-// 	{
-// 		Session session;
-// 		session = row;
-// 		result.push_back(std::move(session));
-// 	}
-
-// 	return result;
-// }
-
-// // --------------------------------------------------------------------
-
-// class session_rest_controller : public zh::rest_controller
-// {
-//   public:
-// 	session_rest_controller()
-// 		: zh::rest_controller("api")
-// 	{
-// 		// create a new session, user should provide username, password and session name
-// 		map_post_request("session", &session_rest_controller::post_session, "user", "password", "name");
-// 	}
-
-// 	// CRUD routines
-// 	CreateSessionResult post_session(std::string user, std::string password, std::string name)
-// 	{
-// 		User u = UserService::instance().get_user(user);
-// 		std::string pw = u.password;
-
-// 		prsm_pw_encoder pwenc;
-
-// 		if (not pwenc.matches(password, u.password))
-// 			throw std::runtime_error("Invalid username/password");
-
-// 		std::string token = zeep::encode_base64url(zeep::random_hash());
-// 		unsigned long userid = u.id;
-
-// 		pqxx::transaction tx(prsm_db_connection::instance());
-// 		auto t = tx.exec1(
-// 			R"(INSERT INTO session (user_id, name, token)
-// 			   VALUES ()" + std::to_string(userid) + ", " + tx.quote(name) + ", " + tx.quote(token) + R"()
-// 			RETURNING id, name, token, trim(both '"' from to_json(created)::text) AS created,
-// 					  trim(both '"' from to_json(expires)::text) AS expires)");
-
-// 		tx.commit();
-
-// 		return t;
-// 	}
-// };
-
 class api_rest_controller : public zh::rest_controller
 {
   public:
 	api_rest_controller()
-		: zh::rest_controller("archive")
+		: zh::rest_controller("v1")
 	{
-		// // get session info
-		// map_get_request("session/{id}", &api_rest_controller::get_session, "id");
-
-		// // delete a session
-		// map_delete_request("session/{id}", &api_rest_controller::delete_session, "id");
-
-		// // return a list of runs
-		// map_get_request("session/{id}/run", &api_rest_controller::get_all_runs, "id");
-
-		// // Submit a run (job)
-		// map_post_request("session/{id}/run", &api_rest_controller::create_job, "id",
-		// 	"mtz-file", "pdb-file", "restraints-file", "sequence-file", "parameters");
-
-		// // return info for a run
-		// map_get_request("session/{id}/run/{run}", &api_rest_controller::get_run, "id", "run");
-
-		// // get a list of the files in output
-		// map_get_request("session/{id}/run/{run}/output", &api_rest_controller::get_result_file_list, "id", "run");
-
-		// // get a result file
-		// map_get_request("session/{id}/run/{run}/output/{file}", &api_rest_controller::get_result_file, "id", "run", "file");
-
 		// get a file
-		map_get_request("file/{hash}/{type}", &api_rest_controller::get_file, "hash", "type");
+		map_get_request("file/{id}/{hash}/{type}", &api_rest_controller::get_file, "id", "hash", "type");
 	}
 
-	zh::reply get_file(const std::string &hash, const std::string &type)
+	zh::reply get_file(const std::string &id, const std::string &hash, const std::string &type)
 	{
-		auto &&[file, name, content_type] = data_service::instance().get_file(hash, type);
+		auto &&[file, name] = data_service::instance().get_file(id, hash, type);
+		auto content_type = mimetype_for_filetype(filetype_from_string(type));
 
 		zh::reply rep{zh::ok};
 		rep.set_content(file, content_type);
@@ -456,106 +76,94 @@ class api_rest_controller : public zh::rest_controller
 		return rep;
 	}
 
-// 	// CRUD routines
-
-// 	CreateSessionResult get_session(unsigned long id)
-// 	{
-// 		return SessionStore::instance().get_by_id(id);
-// 	}
-
-// 	void delete_session(unsigned long id)
-// 	{
-// 		SessionStore::instance().delete_by_id(id);
-// 	}
-
-// 	std::vector<Run> get_all_runs(unsigned long id)
-// 	{
-// 		auto session = SessionStore::instance().get_by_id(id);
-
-// 		return RunService::instance().get_runs_for_user(session.user);
-// 	}
-
-// 	Run create_job(unsigned long sessionID, const zh::file_param& diffractionData, const zh::file_param& coordinates,
-// 		const zh::file_param& restraints, const zh::file_param& sequence, const json& params)
-// 	{
-// 		auto session = SessionStore::instance().get_by_id(sessionID);
-
-// 		return RunService::instance().submit(session.user, coordinates, diffractionData, restraints, sequence, params);
-// 	}
-
-// 	Run get_run(unsigned long sessionID, unsigned long runID)
-// 	{
-// 		auto session = SessionStore::instance().get_by_id(sessionID);
-
-// 		return RunService::instance().get_run(session.user, runID);
-// 	}
-
-// 	std::vector<std::string> get_result_file_list(unsigned long sessionID, unsigned long runID)
-// 	{
-// 		auto session = SessionStore::instance().get_by_id(sessionID);
-
-// 		return RunService::instance().get_result_file_list(session.user, runID);
-// 	}
-
-// 	fs::path get_result_file(unsigned long sessionID, unsigned long runID, const std::string& file)
-// 	{
-// 		auto session = SessionStore::instance().get_by_id(sessionID);
-
-// 		return RunService::instance().get_result_file(session.user, runID, file);
-// 	}
-
   private:
 	fs::path m_pdb_redo_dir;
 };
 
-// // --------------------------------------------------------------------
+// --------------------------------------------------------------------
 
-// class prsm_html_controller : public zh::html_controller
-// {
-//   public:
-// 	prsm_html_controller(const std::string& pdbRedoDir)
-// 		: m_pdb_redo_dir(pdbRedoDir)
-// 	{
-// 		mount("", &prsm_html_controller::welcome);
+class pram_html_controller : public zh::html_controller
+{
+  public:
+	pram_html_controller()
+	{
+		mount("", &pram_html_controller::welcome);
 
-// 		mount("admin", &prsm_html_controller::admin);
-// 		mount("admin/deleteSession", "DELETE", &prsm_html_controller::handle_delete_session);
-// 		mount("{css,scripts,fonts,images}/", &prsm_html_controller::handle_file);
-// 	}
+		mount("search", &pram_html_controller::search);
+		mount("entries-table", &pram_html_controller::entries_table);
 
-// 	void welcome(const zh::request& request, const zh::scope& scope, zh::reply& reply);
-// 	void admin(const zh::request& request, const zh::scope& scope, zh::reply& reply);
+		mount("{css,scripts,fonts,images}/", &pram_html_controller::handle_file);
+	}
 
-// 	void handle_delete_session(const zh::request& request, const zh::scope& scope, zh::reply& reply);
+	void welcome(const zh::request& request, const zh::scope& scope, zh::reply& reply);
+	void search(const zh::request& request, const zh::scope& scope, zh::reply& reply);
 
-// 	std::string m_pdb_redo_dir;
-// };
+	void entries_table(const zh::request& request, const zh::scope& scope, zh::reply& reply);
+};
 
-// void prsm_html_controller::welcome(const zh::request& request, const zh::scope& scope, zh::reply& reply)
-// {
-// 	get_template_processor().create_reply_from_template("index.html", scope, reply);
-// }
+void pram_html_controller::welcome(const zh::request& request, const zh::scope& scope, zh::reply& reply)
+{
+	get_template_processor().create_reply_from_template("index.html", scope, reply);
+}
 
-// void prsm_html_controller::admin(const zh::request& request, const zh::scope& scope, zh::reply& reply)
-// {
-// 	zh::scope sub(scope);
+void pram_html_controller::search(const zh::request& request, const zh::scope& scope, zh::reply& reply)
+{
+	using json = zeep::json::element;
 
-// 	json sessions;
-// 	auto s = SessionStore::instance().get_all_sessions();
-// 	to_element(sessions, s);
-// 	sub.put("sessions", sessions);
+	zh::scope sub(scope);
+	auto &ds = data_service::instance();
 
-// 	get_template_processor().create_reply_from_template("admin.html", sub, reply);
-// }
+	std::string
+		program = request.get_parameter("program"),
+		version = request.get_parameter("version");
 
-// void prsm_html_controller::handle_delete_session(const zh::request& request, const zh::scope& scope, zh::reply& reply)
-// {
-// 	unsigned long sessionID = std::stoul(request.get_parameter("sessionid", "0"));
-// 	if (sessionID != 0)
-// 		SessionStore::instance().delete_by_id(sessionID);
+	auto software = ds.get_software();
+	json se;
+	to_element(se, software);
+	sub.put("software", se);
 
-// 	reply = zh::reply::stock_reply(zh::ok);
-// }
+	sub.put("program", program);
+	sub.put("version", version);
+	sub.put("programIx", std::find_if(software.begin(), software.end(), [program](Software &sw) { return sw.name == program; }) - software.begin());
+
+	int page = request.get_parameter("page", 0);
+
+	if (not (program.empty() or version.empty()))
+	{
+		json entries;
+		auto dbentries = ds.query_1(program, version, page, kPageSize);
+		to_element(entries, dbentries);
+		sub.put("entries", entries);
+
+		sub.put("entry-count", ds.count_1(program, version));
+		sub.put("page-size", kPageSize);
+		sub.put("page", 1);
+	}
+
+	get_template_processor().create_reply_from_template("search", sub, reply);
+}
+
+void pram_html_controller::entries_table(const zh::request& request, const zh::scope& scope, zh::reply& reply)
+{
+	int page = request.get_parameter("page", 0);
+
+	using json = zeep::json::element;
+
+	zh::scope sub(scope);
+
+	auto &ds = data_service::instance();
+
+	std::string
+		program = request.get_parameter("program"),
+		version = request.get_parameter("version");
+
+	json entries;
+	auto dbentries = ds.query_1(program, version, page, kPageSize);
+	to_element(entries, dbentries);
+	sub.put("entries", entries);
+
+	return get_template_processor().create_reply_from_template("search::entries-table-fragment", sub, reply);
+}
 
 // --------------------------------------------------------------------
 
@@ -582,12 +190,20 @@ int a_main(int argc, char* const argv[])
 
 	// --------------------------------------------------------------------
 
-	auto command = config.get("command");
-
-	if (command.empty())
+	if (not config.has("command"))
 	{
 		std::cerr << "No command specified" << std::endl;
 		exit(1);
+	}
+
+	db_connection::init();
+
+	auto command = config.get("command");
+
+	if (command == "reinit")
+	{
+		data_service::reset();
+		return 0;
 	}
 
 	if (not config.has("pdb-redo-dir"))
@@ -602,28 +218,14 @@ int a_main(int argc, char* const argv[])
 		return 0;
 	}
 
-	std::string secret;
-	if (config.has("secret"))
-		secret = config.get("secret");
-	else
+	zh::daemon server([&config]()
 	{
-		secret = zeep::encode_base64(zeep::random_hash());
-		std::cerr << "starting with created secret " << secret << std::endl;
-	}
-
-	zh::daemon server([secret]()
-	{
-		// auto sc = new zh::security_context(secret, UserService::instance());
-		// sc->add_rule("/admin", { "ADMIN" });
-		// sc->add_rule("/admin/**", { "ADMIN" });
-		// sc->add_rule("/", {});
-
-		// sc->register_password_encoder<prsm_pw_encoder>();
-
-		// auto s = new zeep::http::server(sc);
 		auto s = new zeep::http::server{};
 
-		// s->add_error_handler(new prsm_db_error_handler());
+		if (config.has("context"))
+			s->set_context_name(config.get("context"));
+
+		s->add_error_handler(new db_error_handler());
 
 #ifndef NDEBUG
 		s->set_template_processor(new zeep::http::file_based_html_template_processor("docroot"));
@@ -631,10 +233,7 @@ int a_main(int argc, char* const argv[])
 		s->set_template_processor(new zeep::http::rsrc_based_html_template_processor());
 #endif
 
-		// s->add_controller(new zh::login_controller());
-
-		// s->add_controller(new prsm_html_controller(pdbRedoDir));
-		// s->add_controller(new session_rest_controller());
+		s->add_controller(new pram_html_controller());
 		s->add_controller(new api_rest_controller());
 
 		return s;

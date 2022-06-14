@@ -112,11 +112,17 @@ list(APPEND REQUIRED_LIBRARIES ${STDCPPFS_LIBRARY})
 include(FindAtomic)
 list(APPEND REQUIRED_LIBRARIES ${STDCPPATOMIC_LIBRARY})
 
+# I tend to install libpqxx in my $HOME/.local, but sometimes pkg-config/cmake cannot find it there
+set(ENV{PKG_CONFIG_PATH} "$ENV{HOME}/.local/lib/pkgconfig/")
+pkg_check_modules(PKG_PQ REQUIRED IMPORTED_TARGET libpq libpqxx>=7.2)
+
+find_package(LibArchive REQUIRED)
+
 find_program(YARN yarn REQUIRED)
 
 find_package(zeep 5.1.4 REQUIRED)
 find_package(Boost COMPONENTS program_options iostreams REQUIRED)
-find_package(mongocxx REQUIRED)
+# find_package(mongocxx REQUIRED)
 
 # As long as C++20 is not fully implemented (and used)
 find_package(date REQUIRED)
@@ -130,6 +136,7 @@ add_executable(pramd
 	${PROJECT_SOURCE_DIR}/src/pramd.cpp
 	${PROJECT_SOURCE_DIR}/src/configuration.cpp
 	${PROJECT_SOURCE_DIR}/src/data-service.cpp
+	${PROJECT_SOURCE_DIR}/src/db-connection.cpp
 	${PROJECT_SOURCE_DIR}/src/utilities.cpp)
 
 target_compile_definitions(pramd
@@ -141,13 +148,10 @@ target_compile_definitions(pramd
 # yarn rules for javascripts
 	
 set(webpack_input
-	${PROJECT_SOURCE_DIR}/webapp/admin.js
-	${PROJECT_SOURCE_DIR}/webapp/custom-bootstrap-theme.scss
 	${PROJECT_SOURCE_DIR}/webapp/index.js
-	${PROJECT_SOURCE_DIR}/webapp/login.js
+	${PROJECT_SOURCE_DIR}/webapp/lists.js
 	${PROJECT_SOURCE_DIR}/webapp/pdb-redo-bootstrap.scss
-	${PROJECT_SOURCE_DIR}/webapp/request.js
-	${PROJECT_SOURCE_DIR}/webapp/test-api.js)
+	${PROJECT_SOURCE_DIR}/webapp/search.js)
 
 set(webpack_output ${PROJECT_SOURCE_DIR}/docroot/scripts/index.js)
 
@@ -160,17 +164,19 @@ add_custom_command(
 
 add_custom_target(webpack DEPENDS ${webpack_output})
 
-# add_dependencies(pramd webpack)
+add_dependencies(pramd webpack)
 
 if(USE_RSRC)
 	mrc_target_resources(pramd
 		${PROJECT_SOURCE_DIR}/docroot/
 		${PROJECT_SOURCE_DIR}/rsrc/configuration.json
+		${PROJECT_SOURCE_DIR}/rsrc/db-schema.sql
+		${PROJECT_SOURCE_DIR}/rsrc/data.json.schema
 	)
 endif()
 
-target_include_directories(pramd PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR})
-target_link_libraries(pramd date::date mongo::mongocxx_static zeep::zeep std::filesystem Boost::program_options Boost::iostreams ${REQUIRED_LIBRARIES})
+target_include_directories(pramd PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR} ${PQ_INCLUDE_DIRS})
+target_link_libraries(pramd date::date zeep::zeep std::filesystem Boost::program_options Boost::iostreams PkgConfig::PKG_PQ LibArchive::LibArchive ${REQUIRED_LIBRARIES})
 
 install(TARGETS pramd
     RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}

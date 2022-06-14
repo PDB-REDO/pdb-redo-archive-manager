@@ -24,55 +24,72 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <sstream>
 
-#include <functional>
-
-// --------------------------------------------------------------------
-
-inline bool icompare_uchar(unsigned char a, unsigned char b)
-{
-	return std::tolower(a) == std::tolower(b);
-}
-
-inline bool icompare(const std::string &a, const std::string &b)
-{
-	return a.length() == b.length() and std::equal(a.begin(), a.end(), b.begin(), icompare_uchar);
-}
-
-constexpr bool icompare(std::string_view a, std::string_view b)
-{
-	return a.length() == b.length() and std::equal(a.begin(), a.end(), b.begin(), icompare_uchar);
-}
+#include "configuration.hpp"
+#include "db-connection.hpp"
 
 // --------------------------------------------------------------------
 
-void parallel_for(size_t N, std::function<void(size_t)>&& f);
+std::unique_ptr<db_connection> db_connection::s_instance;
+thread_local std::unique_ptr<pqxx::connection> db_connection::s_connection;
+
+void db_connection::init()
+{
+	auto &config = configuration::instance();
+
+	std::ostringstream connectionString;
+	for (auto opt: { "db-host", "db-port", "db-dbname", "db-user", "db-password" })
+	{
+		if (not config.has(opt))
+			continue;
+		
+		connectionString << (opt + 3) << '=' << config.get(opt) << ' ';
+	}
+
+	s_instance.reset(new db_connection(connectionString.str()));
+}
+
+db_connection& db_connection::instance()
+{
+	return *s_instance;
+}
 
 // --------------------------------------------------------------------
 
-int get_terminal_width();
-std::string get_user_name();
-
-// -----------------------------------------------------------------------
-
-class progress
+db_connection::db_connection(const std::string& connectionString)
+	: m_connection_string(connectionString)
 {
-  public:
-	progress(const std::string &action, int64_t max);
-	progress(const progress &) = delete;
-	progress &operator=(const progress &) = delete;
+}
 
-	// indefinite version, shows ascii spinner
-	progress(const std::string &action);
+pqxx::connection& db_connection::get_connection()
+{
+	if (not s_connection)
+		s_connection.reset(new pqxx::connection(m_connection_string));
+	return *s_connection;
+}
 
-	virtual ~progress();
+void db_connection::reset()
+{
+	s_connection.reset();
+}
 
-	void consumed(int64_t n); // consumed is relative
-	void set(int64_t n); // progress is absolute
+// --------------------------------------------------------------------
 
-	void message(const std::string &msg);
-
-  private:
-	struct progress_impl *m_impl;
-};
+bool db_error_handler::create_error_reply(const zeep::http::request& req, std::exception_ptr eptr, zeep::http::reply& reply)
+{
+	try
+	{
+		std::rethrow_exception(eptr);
+	}
+	catch (pqxx::broken_connection& ex)
+	{
+		std::cerr << ex.what() << std::endl;
+		db_connection::instance().reset();
+	}
+	catch (...)
+	{
+	}
+	
+	return false;
+}

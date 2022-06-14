@@ -11,7 +11,7 @@
 		{
 			"name": "command",
 			"type": "string",
-			"desc": "Command, one of rescan, start, stop, status or reload",
+			"desc": "Command, one of reinit, rescan, start, stop, status or reload",
 			"position": 1
 		},
 		{
@@ -44,6 +44,11 @@
 			"desc": "Port to listen to"
 		},
 		{
+			"name": "context",
+			"type": "string",
+			"desc": "The base part of the URL in case this server is behind a reverse proxy"
+		},
+		{
 			"name": "user,u",
 			"type": "string",
 			"desc": "User to run the daemon"
@@ -72,11 +77,6 @@
 			"name": "db-password",
 			"type": "string",
 			"desc": "Database password"
-		},
-		{
-			"name": "mongo-db-uri",
-			"type": "string",
-			"desc": "The mongo db connection uri"
 		}
 	]
 }
