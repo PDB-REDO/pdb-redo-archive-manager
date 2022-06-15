@@ -1,11 +1,18 @@
 -- clean up first
+drop view latest_dbentry;
 
 drop table if exists dbentry_property_number cascade;
+
 drop table if exists dbentry_property_string cascade;
+
 drop table if exists dbentry_property_boolean cascade;
+
 drop table if exists property cascade;
+
 drop table if exists dbentry_software cascade;
+
 drop table if exists software cascade;
+
 drop table if exists dbentry cascade;
 
 -- software
@@ -28,17 +35,36 @@ create table dbentry (
 	id serial primary key,
 	pdb_id varchar not null,
 	version_hash varchar not null,
-
 	coordinates_revision_date_pdb date,
 	coordinates_revision_major_mmCIF varchar,
 	coordinates_revision_minor_mmCIF varchar,
 	coordinates_edited boolean,
 	reflections_revision varchar,
 	reflections_edited boolean,
-
 	created timestamp with time zone default current_timestamp not null,
+	data_time date not null,
 	unique(pdb_id, version_hash)
 );
+
+-- a view on dbentry containing only the latest version, based on data_time
+create view latest_dbentry as
+select
+	e.*
+from
+	dbentry e
+where
+	e.version_hash = (
+		select
+			e1.version_hash
+		from
+			dbentry e1
+		where
+			e1.pdb_id = e.pdb_id
+		order by
+			e1.data_time desc
+		limit
+			1
+	);
 
 -- dbentry_software
 create table dbentry_software (
@@ -70,7 +96,6 @@ create table dbentry_property_boolean (
 );
 
 -- permissions
-
 alter table
 	software owner to "${owner}";
 

@@ -1,5 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause
+ * SPDX-License-Identifier: BSD-2-Filter
  *
  * Copyright (c) 2022 NKI/AVL, Netherlands Cancer Institute
  *
@@ -100,6 +100,41 @@ struct DbEntry
 
 // --------------------------------------------------------------------
 
+enum class FilterType { Software, Data };
+enum class OperatorType { LT, LE, EQ, GE, GT, NE };
+
+struct Filter
+{
+	FilterType type;
+	std::string subject;
+	OperatorType op;
+	std::string value;
+
+	template<typename Archive>
+	void serialize(Archive& ar, unsigned long version)
+	{
+		ar & zeep::make_nvp("type", type)
+		   & zeep::make_nvp("subject", subject)
+		   & zeep::make_nvp("op", op)
+		   & zeep::make_nvp("value", value);
+	}
+};
+
+struct Query
+{
+	bool latest;
+	std::vector<Filter> filters;
+
+	template<typename Archive>
+	void serialize(Archive& ar, unsigned long version)
+	{
+		ar & zeep::make_nvp("latest", latest)
+		   & zeep::make_nvp("filters", filters);
+	}
+};
+
+// --------------------------------------------------------------------
+
 class data_service
 {
   public:
@@ -165,6 +200,10 @@ class data_service
 
 	/// \brief Return true if entry exists.
 	bool exists(const std::string &pdb_id, const std::string &version_hash) const;
+
+	/// \brief Another query
+	std::vector<DbEntry> query(const Query &q, uint32_t page, uint32_t page_size);
+	size_t count(const Query &q);
 
   private:
 

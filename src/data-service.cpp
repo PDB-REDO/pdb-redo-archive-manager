@@ -284,9 +284,6 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 {
 	pqxx::work tx(db_connection::instance());
 
-	using namespace date;
-	using namespace std::chrono;
-
 	auto &versions_data = versions["data"];
 	std::optional<std::string> coordinates_revision_date_pdb;
 	if (versions_data["coordinates_revision_date_pdb"].type() == zeep::json::element::value_type::string)
@@ -301,9 +298,11 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 	auto reflections_revision = versions_data["reflections_revision"].as<std::string>();
 	auto reflections_edited = versions_data["reflections_edited"].as<bool>();
 
+	auto date_dp = data["properties"]["TIME"].as<std::string>();
+
 	auto r = tx.exec1(R"(
 		INSERT INTO dbentry (pdb_id, version_hash, coordinates_revision_date_pdb, coordinates_revision_major_mmCIF, coordinates_revision_minor_mmCIF,
-			coordinates_edited, reflections_revision, reflections_edited)
+			coordinates_edited, reflections_revision, reflections_edited, data_time)
 		VALUES ()" +
 			 tx.quote(pdb_id) + ", " +
 			 tx.quote(hash) + ", " +
@@ -312,7 +311,8 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 			 tx.quote(coordinates_revision_minor_mmCIF) + ", " +
 			 tx.quote(coordinates_edited) + ", " +
 			 tx.quote(reflections_revision) + ", " +
-			 tx.quote(reflections_edited) + ") RETURNING id");
+			 tx.quote(reflections_edited) + ", " +
+			 tx.quote(date_dp) + ") RETURNING id");
 
 	auto id = r.at("id").as<int>();
 
@@ -662,3 +662,28 @@ size_t data_service::count_1(const std::string &program, const std::string &vers
 
 	return r.front().as<size_t>();
 }
+
+std::vector<DbEntry> data_service::query(const Query &q, uint32_t page, uint32_t page_size)
+{
+	pqxx::work tx(db_connection::instance());
+
+	std::stringstream qs;
+	qs << R"(select e.pdb_id,
+				  e.version_hash
+			 from dbentry e
+			 join dbentry_software es on es.dbentry_id = e.id
+			 join software s on es.software_id = s.id
+			where )";
+
+	// if (q.latest)
+
+		
+	
+
+}
+
+size_t data_service::count(const Query &q)
+{
+
+}
+
