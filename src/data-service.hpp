@@ -66,7 +66,7 @@ constexpr FileType filetype_from_string(std::string_view s)
 
 // --------------------------------------------------------------------
 
-enum class PropertyType { Null, String, Number, Boolean };
+enum class PropertyType { String, Number, Boolean };
 
 // --------------------------------------------------------------------
 

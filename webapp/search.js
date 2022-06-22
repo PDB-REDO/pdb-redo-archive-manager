@@ -11,14 +11,14 @@ export function construct_query() {
 			{
 				t: 'sw',
 				o: 'eq',
-				s: programSelector.value,
-				v: versionSelector.value
-			},
-			{
-				t: 'sw',
-				o: 'eq',
 				s: 'BLASTp',
 				v: '2.6.0+'
+			},
+			{
+				t: 'd',
+				o: 'eq',
+				s: 'NBBFLIP',
+				v: '0'
 			}
 		]
 	});

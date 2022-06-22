@@ -107,6 +107,35 @@ create table dbentry_property_boolean (
 	primary key(dbentry_id, property_id)
 );
 
+-- views on dbentry_property_{number,string,boolean}
+create view dbentry_property_number_view as
+select
+	pn.dbentry_id,
+	p.name,
+	pn.value
+from
+	dbentry_property_number pn
+	join property p on p.id = pn.property_id;
+
+create view dbentry_property_string_view as
+select
+	pn.dbentry_id,
+	p.name,
+	pn.value
+from
+	dbentry_property_string pn
+	join property p on p.id = pn.property_id;
+
+
+create view dbentry_property_boolean_view as
+select
+	pn.dbentry_id,
+	p.name,
+	pn.value
+from
+	dbentry_property_boolean pn
+	join property p on p.id = pn.property_id;
+
 -- permissions
 alter table
 	software owner to "${owner}";
