@@ -1,5 +1,7 @@
 -- clean up first
-drop view latest_dbentry;
+drop view if exists latest_dbentry;
+
+drop view if exists dbentry_software_view;
 
 drop table if exists dbentry_property_number cascade;
 
@@ -73,6 +75,16 @@ create table dbentry_software (
 	primary key(dbentry_id, software_id)
 );
 
+-- a view on dbentry_software, collapsing the data
+create view dbentry_software_view as
+select
+	es.dbentry_id,
+	s.name,
+	s.version
+from
+	dbentry_software es
+	join software s on s.id = es.software_id;
+
 -- dbentry_property, three variants: text, int and float
 create table dbentry_property_number (
 	dbentry_id bigint references dbentry on delete cascade deferrable initially deferred,
@@ -116,3 +128,9 @@ alter table
 
 alter table
 	dbentry_property_boolean owner to "${owner}";
+
+alter view
+	dbentry_software_view owner to "${owner}";
+
+alter view
+	latest_dbentry owner to "${owner}";

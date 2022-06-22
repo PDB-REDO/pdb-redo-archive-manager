@@ -3,7 +3,25 @@ export function construct_query() {
 	const programSelector = document.getElementById('inputProgramName');
 	const versionSelector = document.getElementById('inputProgramVersion');
 
-	return `program=${encodeURIComponent(programSelector.value)}&version=${encodeURIComponent(versionSelector.value)}`;
+	// return `program=${encodeURIComponent(programSelector.value)}&version=${encodeURIComponent(versionSelector.value)}`;
+
+	return JSON.stringify({
+		latest: true,
+		filters: [
+			{
+				t: 'sw',
+				o: 'eq',
+				s: programSelector.value,
+				v: versionSelector.value
+			},
+			{
+				t: 'sw',
+				o: 'eq',
+				s: 'BLASTp',
+				v: '2.6.0+'
+			}
+		]
+	});
 }
 
 function updateVersionSelector() {
@@ -28,6 +46,18 @@ function updateVersionSelector() {
 	}
 }
 
+class Query {
+	constructor() {
+
+
+	}
+
+	submit() {
+
+	}
+}
+
+
 window.addEventListener('load', () => {
 
 	const programSelector = document.getElementById('inputProgramName');
@@ -36,4 +66,6 @@ window.addEventListener('load', () => {
 	if (programSelector && versionSelector) {
 		programSelector.addEventListener('change', updateVersionSelector);
 	}
+
+	new Query();
 })

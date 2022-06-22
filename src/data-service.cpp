@@ -134,6 +134,32 @@ std::vector<Software> data_service::get_software() const
 
 // --------------------------------------------------------------------
 
+data_service &data_service::instance()
+{
+	if (not s_instance)
+	{
+		zeep::value_serializer<FilterType>::init("filter-type", {
+			{ FilterType::Software, "sw" },
+			{ FilterType::Data, "d" }
+		});
+
+		zeep::value_serializer<OperatorType>::init("operator-type", {
+			{ OperatorType::LT, "lt" },
+			{ OperatorType::LE, "le" },
+			{ OperatorType::EQ, "eq" },
+			{ OperatorType::GE, "ge" },
+			{ OperatorType::GT, "gt" },
+			{ OperatorType::NE, "ne" }
+		});
+
+		s_instance.reset(new data_service);
+	}
+
+	return *s_instance;
+}
+
+// --------------------------------------------------------------------
+
 void data_service::reset()
 {
 	using namespace std::literals;
@@ -285,6 +311,8 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 	pqxx::work tx(db_connection::instance());
 
 	auto &versions_data = versions["data"];
+	auto &properties = data["properties"];
+
 	std::optional<std::string> coordinates_revision_date_pdb;
 	if (versions_data["coordinates_revision_date_pdb"].type() == zeep::json::element::value_type::string)
 		coordinates_revision_date_pdb = versions_data["coordinates_revision_date_pdb"].as<std::string>();
@@ -298,7 +326,7 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 	auto reflections_revision = versions_data["reflections_revision"].as<std::string>();
 	auto reflections_edited = versions_data["reflections_edited"].as<bool>();
 
-	auto date_dp = data["properties"]["TIME"].as<std::string>();
+	auto date_dp = properties["TIME"].as<std::string>();
 
 	auto r = tx.exec1(R"(
 		INSERT INTO dbentry (pdb_id, version_hash, coordinates_revision_date_pdb, coordinates_revision_major_mmCIF, coordinates_revision_minor_mmCIF,
@@ -357,7 +385,6 @@ void data_service::insert(const std::string &pdb_id, const std::string &hash, co
 		txs2.commit();
 	}
 
-	auto &properties = data["properties"];
 	for (auto property_it = properties.begin(); property_it != properties.end(); ++property_it)
 	{
 		auto name = property_it.key();
@@ -619,20 +646,21 @@ std::vector<DbEntry> data_service::query_1(const std::string &program, const std
 	else
 		version_clause = "= " + tx.quote(version);
 
-	for (auto const& [pdb_id, version_hash]:
-		tx.stream<std::string,std::string>(
+	for (auto const& [pdb_id, version_hash, date]:
+		tx.stream<std::string,std::string,std::string>(
 		R"(select e.pdb_id,
-				  e.version_hash
+				  e.version_hash,
+				  e.data_time
 			 from dbentry e
 			 join dbentry_software es on es.dbentry_id = e.id
 			 join software s on es.software_id = s.id
 			where s.name = )" + tx.quote(program) + R"(
 			  and s.version )" + version_clause + R"(
-			order by e.pdb_id, e.coordinates_revision_date_pdb
+			order by e.pdb_id, e.data_time
 		   offset )" + std::to_string(page * page_size) + R"( rows
 			fetch first )" + std::to_string(page_size) + R"( rows only)"))
 	{
-		entries.emplace_back(DbEntry{ pdb_id, version_hash });
+		entries.emplace_back(DbEntry{ pdb_id, version_hash, date });
 	}
 
 	tx.commit();
@@ -668,22 +696,60 @@ std::vector<DbEntry> data_service::query(const Query &q, uint32_t page, uint32_t
 	pqxx::work tx(db_connection::instance());
 
 	std::stringstream qs;
-	qs << R"(select e.pdb_id,
-				  e.version_hash
-			 from dbentry e
-			 join dbentry_software es on es.dbentry_id = e.id
-			 join software s on es.software_id = s.id
-			where )";
-
-	// if (q.latest)
-
-		
+	qs << "select e.pdb_id, e.version_hash, e.data_time"
+	   << "  from " << (q.latest ? "latest_dbentry" : "dbentry") << " e";
 	
+	if (not q.filters.empty())
+	{
+		qs << " where id in (";
 
+		bool first = true;
+
+		for (auto &filter : q.filters)
+		{
+			if (not first)
+				qs << " intersect ";
+			first = false;
+
+			if (filter.type == FilterType::Software)
+			{
+				qs << "select dbentry_id from dbentry_software_view s where"
+				   << " s.name = " << tx.quote(filter.subject)
+				   << " and s.version ";
+				
+				if (filter.value == "undefined")
+					qs << "is null";
+				else
+					qs << "= " + tx.quote(filter.value);
+				
+				qs << std::endl;
+			}
+		}
+
+		qs << ')';
+	}
+
+	qs << "  order by e.pdb_id, e.data_time"
+	   << " offset " << (page * page_size) << " rows"
+	   << " fetch first " << page_size << " rows only";
+
+std::cerr << qs.str() << std::endl;
+
+	std::vector<DbEntry> entries;
+
+	for (auto const& [pdb_id, version_hash, date]:
+		tx.stream<std::string,std::string,std::string>(qs.str()))
+	{
+		entries.emplace_back(DbEntry{ pdb_id, version_hash, date });
+	}
+
+	tx.commit();
+
+	return entries;
 }
 
 size_t data_service::count(const Query &q)
 {
-
+	return 0;
 }
 

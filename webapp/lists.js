@@ -51,8 +51,10 @@ class Pager {
 
 		const q = construct_query();
 
-		fetch(`./entries-table?page=${page}&${q}`, {
-			credentials: "include"
+		fetch(`./entries-table?page=${page - 1}`, {
+			credentials: "include",
+			method: "post",
+			body: q
 		}).then(reply => {
 			if (reply.ok)
 				return reply.text();

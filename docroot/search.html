@@ -74,6 +74,7 @@
 					<tr>
 						<th>entry ID</th>
 						<th>Version Hash</th>
+						<th>Date</th>
 						<th colspan="5">Links</th>
 					</tr>
 				</thead>
@@ -82,6 +83,7 @@
 					<tr z:each="c, i: ${entries}" class="entries-row" z:data-row-id="${c.id}" role="button">
 						<td z:text="${c.id}"></td>
 						<td z:text="${c.hash}"></td>
+						<td z:text="${c.date}"></td>
 						<td><a z:href="@{v1/file/${c.id}/${c.hash}/cif}">cif</a></td>
 						<td><a z:href="@{v1/file/${c.id}/${c.hash}/mtz}">mtz</a></td>
 						<td><a z:href="@{v1/file/${c.id}/${c.hash}/data}">data</a></td>

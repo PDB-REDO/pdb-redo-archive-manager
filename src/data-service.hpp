@@ -89,12 +89,14 @@ struct DbEntry
 {
 	std::string pdb_id;
 	std::string version_hash;
+	std::string date;
 
 	template<typename Archive>
 	void serialize(Archive& ar, unsigned long version)
 	{
 		ar & zeep::make_nvp("id", pdb_id)
-		   & zeep::make_nvp("hash", version_hash);
+		   & zeep::make_nvp("hash", version_hash)
+		   & zeep::make_nvp("date", date);
 	}
 };
 
@@ -113,10 +115,10 @@ struct Filter
 	template<typename Archive>
 	void serialize(Archive& ar, unsigned long version)
 	{
-		ar & zeep::make_nvp("type", type)
-		   & zeep::make_nvp("subject", subject)
-		   & zeep::make_nvp("op", op)
-		   & zeep::make_nvp("value", value);
+		ar & zeep::make_nvp("t", type)
+		   & zeep::make_nvp("s", subject)
+		   & zeep::make_nvp("o", op)
+		   & zeep::make_nvp("v", value);
 	}
 };
 
@@ -142,12 +144,7 @@ class data_service
 	static void reset();
 
 	/// \brief Return the singleton instance of data_service, will init one if it doesn't exist.
-	static data_service &instance()
-	{
-		if (not s_instance)
-			s_instance.reset(new data_service);
-		return *s_instance;
-	}
+	static data_service &instance();
 
 	void rescan();
 

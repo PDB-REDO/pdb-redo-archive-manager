@@ -153,13 +153,29 @@ void pram_html_controller::entries_table(const zh::request& request, const zh::s
 
 	auto &ds = data_service::instance();
 
-	std::string
-		program = request.get_parameter("program"),
-		version = request.get_parameter("version");
-
 	json entries;
-	auto dbentries = ds.query_1(program, version, page, kPageSize);
-	to_element(entries, dbentries);
+
+	if (zeep::iequals(request.get_method(), "POST"))
+	{
+		json jq;
+		parse_json(request.get_payload(), jq);
+
+		Query q;
+		from_element(jq, q);
+
+		auto dbentries = ds.query(q, page, kPageSize);
+		to_element(entries, dbentries);
+	}
+	else
+	{
+		std::string
+			program = request.get_parameter("program"),
+			version = request.get_parameter("version");
+
+		auto dbentries = ds.query_1(program, version, page, kPageSize);
+		to_element(entries, dbentries);
+	}
+
 	sub.put("entries", entries);
 
 	return get_template_processor().create_reply_from_template("search::entries-table-fragment", sub, reply);
