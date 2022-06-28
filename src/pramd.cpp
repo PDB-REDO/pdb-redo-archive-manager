@@ -1,17 +1,17 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
- * 
+ *
  * Copyright (c) 2022 NKI/AVL, Netherlands Cancer Institute
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -29,10 +29,10 @@
 #include <fstream>
 
 #include <zeep/http/daemon.hpp>
-#include <zeep/http/rest-controller.hpp>
 #include <zeep/http/html-controller.hpp>
-#include <zeep/http/security.hpp>
 #include <zeep/http/login-controller.hpp>
+#include <zeep/http/rest-controller.hpp>
+#include <zeep/http/security.hpp>
 
 #include "configuration.hpp"
 #include "data-service.hpp"
@@ -54,6 +54,47 @@ const int
 
 #define APP_NAME "pramd"
 
+class software_expression_utility_object : public zh::expression_utility_object<software_expression_utility_object>
+{
+  public:
+	static constexpr const char *name() { return "software"; }
+
+	virtual zh::object evaluate(const zh::scope &scope, const std::string &methodName,
+		const std::vector<zh::object> &parameters) const
+	{
+		zh::object result;
+
+		if (methodName == "indexOf" and parameters.size() == 1)
+		{
+			try
+			{
+				auto &ds = data_service::instance();
+				auto software = ds.get_software();
+
+				auto sw = parameters.front().as<std::string>();
+
+				for (size_t ix = 0; ix < sw.length(); ++ix)
+				{
+					if (software[ix].name != sw)
+						continue;
+					
+					result = ix;
+					break;
+				}
+			}
+			catch (const std::exception &e)
+			{
+				std::cerr << "Error getting post by ID: " << e.what() << std::endl;
+			}
+		}
+
+		return result;
+	}
+
+} s_software_expression_instance;
+
+// --------------------------------------------------------------------
+
 class api_rest_controller : public zh::rest_controller
 {
   public:
@@ -62,6 +103,54 @@ class api_rest_controller : public zh::rest_controller
 	{
 		// get a file
 		map_get_request("file/{id}/{hash}/{type}", &api_rest_controller::get_file, "id", "hash", "type");
+
+		// query construction support
+
+		// return list of all software
+		map_get_request("q/software", &api_rest_controller::get_all_software);
+
+		// return specific software item
+		map_get_request("q/software/{name}", &api_rest_controller::get_software, "name");
+
+		// return list of all properties
+		map_get_request("q/property", &api_rest_controller::get_all_properties);
+
+		// return specific property item
+		map_get_request("q/property/{name}", &api_rest_controller::get_property, "name");
+	}
+
+	std::vector<Software> get_all_software()
+	{
+		auto &ds = data_service::instance();
+		return ds.get_software();
+	}
+
+	Software get_software(const std::string &name)
+	{
+		auto &ds = data_service::instance();
+		for (auto &sw : ds.get_software())
+		{
+			if (sw.name == name)
+				return sw;
+		}
+		throw zh::not_found;
+	}
+
+	std::vector<Property> get_all_properties()
+	{
+		auto &ds = data_service::instance();
+		return ds.get_properties();
+	}
+
+	Property get_property(const std::string &name)
+	{
+		auto &ds = data_service::instance();
+		for (auto &p : ds.get_properties())
+		{
+			if (p.name == name)
+				return p;
+		}
+		throw zh::not_found;
 	}
 
 	zh::reply get_file(const std::string &id, const std::string &hash, const std::string &type)
@@ -95,65 +184,103 @@ class pram_html_controller : public zh::html_controller
 		mount("{css,scripts,fonts,images}/", &pram_html_controller::handle_file);
 	}
 
-	void welcome(const zh::request& request, const zh::scope& scope, zh::reply& reply);
-	void search(const zh::request& request, const zh::scope& scope, zh::reply& reply);
+	void welcome(const zh::request &request, const zh::scope &scope, zh::reply &reply);
+	void search(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 
-	void entries_table(const zh::request& request, const zh::scope& scope, zh::reply& reply);
+	void entries_table(const zh::request &request, const zh::scope &scope, zh::reply &reply);
+
+	json processQuery(const zh::request &request);
 };
 
-void pram_html_controller::welcome(const zh::request& request, const zh::scope& scope, zh::reply& reply)
+void pram_html_controller::welcome(const zh::request &request, const zh::scope &scope, zh::reply &reply)
 {
 	get_template_processor().create_reply_from_template("index.html", scope, reply);
 }
 
-void pram_html_controller::search(const zh::request& request, const zh::scope& scope, zh::reply& reply)
+void pram_html_controller::search(const zh::request &request, const zh::scope &scope, zh::reply &reply)
 {
 	using json = zeep::json::element;
 
 	zh::scope sub(scope);
 	auto &ds = data_service::instance();
-
-	std::string
-		program = request.get_parameter("program"),
-		version = request.get_parameter("version");
 
 	auto software = ds.get_software();
 	json se;
 	to_element(se, software);
 	sub.put("software", se);
 
-	sub.put("program", program);
-	sub.put("version", version);
-	sub.put("programIx", std::find_if(software.begin(), software.end(), [program](Software &sw) { return sw.name == program; }) - software.begin());
-
 	int page = request.get_parameter("page", 0);
 
-	if (not (program.empty() or version.empty()))
-	{
-		json entries;
-		auto dbentries = ds.query_1(program, version, page, kPageSize);
-		to_element(entries, dbentries);
-		sub.put("entries", entries);
+	std::string query;
+	if (request.get_method() == "POST")
+		query = request.get_payload();
+	else
+		query = R"(
+{
+	"latest": false,
+	"filters": [
+		{
+			"t": "sw",
+			"s": "binliner",
+			"o": "eq",
+			"v": "1.04"
+		},
+		{
+			"t": "sw",
+			"s": "BLASTp",
+			"o": "eq",
+			"v": "2.6.0+"
+		}
+	]
+}
+	)";
 
-		sub.put("entry-count", ds.count_1(program, version));
-		sub.put("page-size", kPageSize);
-		sub.put("page", 1);
+	if (not query.empty())
+	{
+		json jq;
+		parse_json(query, jq);
+
+		sub.put("query", jq);
+
+		Query q;
+		from_element(jq, q);
+
+		auto dbentries = ds.query(q, page, kPageSize);
+
+		if (not dbentries.empty())
+		{
+			json entries;
+			to_element(entries, dbentries);
+			sub.put("entries", entries);
+
+			sub.put("entry-count", ds.count(q));
+			sub.put("page-size", kPageSize);
+			sub.put("page", 1);
+		}
 	}
 
 	get_template_processor().create_reply_from_template("search", sub, reply);
 }
 
-void pram_html_controller::entries_table(const zh::request& request, const zh::scope& scope, zh::reply& reply)
+void pram_html_controller::entries_table(const zh::request &request, const zh::scope &scope, zh::reply &reply)
 {
-	int page = request.get_parameter("page", 0);
-
 	using json = zeep::json::element;
 
 	zh::scope sub(scope);
 
-	auto &ds = data_service::instance();
+	json entries = processQuery(request);
 
-	json entries;
+	sub.put("entries", entries);
+
+	return get_template_processor().create_reply_from_template("search::entries-table-fragment", sub, reply);
+}
+
+json pram_html_controller::processQuery(const zh::request &request)
+{
+	json result;
+
+	auto &ds = data_service::instance();
+	int page = request.get_parameter("page", 0);
 
 	if (zeep::iequals(request.get_method(), "POST"))
 	{
@@ -164,7 +291,7 @@ void pram_html_controller::entries_table(const zh::request& request, const zh::s
 		from_element(jq, q);
 
 		auto dbentries = ds.query(q, page, kPageSize);
-		to_element(entries, dbentries);
+		to_element(result, dbentries);
 	}
 	else
 	{
@@ -173,17 +300,15 @@ void pram_html_controller::entries_table(const zh::request& request, const zh::s
 			version = request.get_parameter("version");
 
 		auto dbentries = ds.query_1(program, version, page, kPageSize);
-		to_element(entries, dbentries);
+		to_element(result, dbentries);
 	}
 
-	sub.put("entries", entries);
-
-	return get_template_processor().create_reply_from_template("search::entries-table-fragment", sub, reply);
+	return result;
 }
 
 // --------------------------------------------------------------------
 
-int a_main(int argc, char* const argv[])
+int a_main(int argc, char *const argv[])
 {
 	using namespace std::literals;
 
@@ -194,15 +319,13 @@ int a_main(int argc, char* const argv[])
 #endif
 
 	auto &config = configuration::init(argc, argv, config_templ, []()
-	{
-		std::cerr << R"(Command should be either:
+		{ std::cerr << R"(Command should be either:
 
   start     start a new server
   stop      start a running server
   status    get the status of a running server
   reload    restart a running server with new options
-			 )" << std::endl;
-	});
+			 )" << std::endl; });
 
 	// --------------------------------------------------------------------
 
@@ -235,7 +358,7 @@ int a_main(int argc, char* const argv[])
 	}
 
 	zh::daemon server([&config]()
-	{
+		{
 		auto s = new zeep::http::server{};
 
 		if (config.has("context"))
@@ -252,8 +375,8 @@ int a_main(int argc, char* const argv[])
 		s->add_controller(new pram_html_controller());
 		s->add_controller(new api_rest_controller());
 
-		return s;
-	}, APP_NAME );
+		return s; },
+		APP_NAME);
 
 	if (command == "start")
 	{

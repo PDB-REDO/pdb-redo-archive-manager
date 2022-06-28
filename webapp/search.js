@@ -60,12 +60,19 @@ class Query {
 
 window.addEventListener('load', () => {
 
-	const programSelector = document.getElementById('inputProgramName');
-	const versionSelector = document.getElementById('inputProgramVersion');
+	// const programSelector = document.getElementById('inputProgramName');
+	// const versionSelector = document.getElementById('inputProgramVersion');
 
-	if (programSelector && versionSelector) {
-		programSelector.addEventListener('change', updateVersionSelector);
-	}
+	// if (programSelector && versionSelector) {
+	// 	programSelector.addEventListener('change', updateVersionSelector);
+	// }
 
-	new Query();
+	// new Query();
+
+	const f = document.getElementById("query-form");
+	f.addEventListener('submit', () => {
+		
+	});
+
+
 })

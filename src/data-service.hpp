@@ -83,6 +83,22 @@ struct Software
 	}
 };
 
+struct Property
+{
+	std::string name;
+	PropertyType type;
+
+	Property(const std::string &name, PropertyType type)
+		: name(name), type(type) {}
+
+	template<typename Archive>
+	void serialize(Archive& ar, unsigned long version)
+	{
+		ar & zeep::make_nvp("name", name)
+		   & zeep::make_nvp("type", type);
+	}
+};
+
 // --------------------------------------------------------------------
 
 struct DbEntry
@@ -174,17 +190,10 @@ class data_service
 	int get_software_id(const std::string &program, const std::string &version) const;
 
 	/// \brief Return the property type for property named \a name
-	PropertyType get_property_type(const std::string &name) const
-	{
-		try
-		{
-			return m_prop_types.at(name);
-		}
-		catch(const std::exception& e)
-		{
-			std::throw_with_nested(std::runtime_error("Undefined property " + name));
-		}
-	}
+	PropertyType get_property_type(const std::string &name) const;
+
+	/// \brief Return all Properties
+	std::vector<Property> get_properties() const;
 
 	/// \brief Return the list of available programs
 	std::vector<Software> get_software() const;
@@ -213,5 +222,5 @@ class data_service
 	static std::unique_ptr<data_service> s_instance;
 
 	std::filesystem::path m_pdb_redo_dir;
-	std::map<std::string,PropertyType> m_prop_types;
+	std::vector<Property> m_properties;
 };

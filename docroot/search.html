@@ -15,15 +15,13 @@
 <body>
 
 	<script z:inline="javascript">
-		const _csrf = /*[[${csrfToken}]]*/ null;
-		const SOFTWARE = /*[[${software}]]*/ null;
+const SOFTWARE = /*[[${software}]]*/ null;
+const QUERY = /*[[${query}]]*/ {};
+ 
+const ENTRY_COUNT = /*[[${entry-count}]]*/ 0;
+const PAGE_SIZE = /*[[${page-size}]]*/ 10;
 
-		const PROGRAM = /*[[${program}]]*/ null;
-		const VERSION = /*[[${version}]]*/ null;
-
-		const ENTRY_COUNT = /*[[${entry-count}]]*/ 0;
-		const PAGE_SIZE = /*[[${page-size}]]*/ 10;
-		let page = /*[[${page}]]*/ 1;
+let page = /*[[${page}]]*/ 1;
 	</script>
 
 	<nav z:replace="~{menu :: navbar('admin')}"></nav>
@@ -32,37 +30,73 @@
 
 		<h3 class="mt-3">Search Archive</h3>
 
-		<div class="row">
-			<div class="column-sm mx-5 my-2">
-				<h6>Program / Version</h6>
-				<form id="token-form" action="search" method="get">
-					<div class="input-group input-group-sm mb-3">
-						<div class="input-group-prepend">
-							<span class="input-group-text">Program</span>
-						</div>
+		<form id="query-form">
+			<div class="form-group form-check">
+				<input type="checkbox" class="form-check-input" id="latest-only-cb" z:checked="${query.latest}" name="latest"/>
+				<label class="form-check-label" for="latest-only-cb">Latest version only</label>
+			</div>
 
-						<select class="custom-select" id="inputProgramName" name="program">
-							<option z:each="sw, i : ${software}" z:selected="${i.index == programIx}" z:value="${sw.name}"
+			<div class="form-row align-items-center" z:each="qi,qix: ${query.filters}">
+				<z:block z:if="${qi.t == 'sw'}">
+					<div class="col-auto my-1">
+						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l1-${qix.count}|">Program</label>
+
+						<input class="form-control" type="text" z:value="${qi.s}" readonly="readonly"/>
+
+						<!-- <select class="custom-select mr-sm-2" z:id="|l1-${qix.count}|" name="program">
+							<option z:each="sw, i : ${software}" z:selected="${qi.s == sw.name}" z:value="${sw.name}"
 								z:text="${sw.name}">
 							</option>
-						</select>
+						</select> -->
 					</div>
 
-					<div class="input-group input-group-sm mb-3">
-						<div class="input-group-prepend">
-							<span class="input-group-text">Version</span>
-						</div>
+					<div class="col-auto my-1">
+						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l2-${qix.count}|">Version</label>
 
-						<select class="custom-select" id="inputProgramVersion" name="version">
-							<option z:each="swv, i : ${software[programIx].versions}" z:value="${swv}"
+						<select class="custom-select mr-sm-2" id="|l2-${qix.count}|" name="version">
+							<option z:each="swv, i : ${software[#software.indexOf(qi.s)].versions}" z:value="${swv}"
 								z:selected="${swv == version}" z:text="${swv}"></option>
 						</select>
 					</div>
-
-					<button type="submit" form="token-form" class="btn btn-primary mt-3">Search</button>
-				</form>
+				</z:block>
 			</div>
-		</div>
+
+			<div class="form-row align-items-center" z:each="qi,qix: ${query.filters}">
+				<z:block z:if="${qi.t == 'd'}">
+					<div class="col-auto my-1">
+						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l1-${qix.count}|">Data</label>
+
+						<input class="form-control" type="text" z:value="${qi.s}" readonly="readonly"/>
+
+						<!-- <select class="custom-select mr-sm-2" z:id="|l1-${qix.count}|" name="program">
+							<option z:each="sw, i : ${software}" z:selected="${qi.s == sw.name}" z:value="${sw.name}"
+								z:text="${sw.name}">
+							</option>
+						</select> -->
+					</div>
+
+					<div class="col-auto my-1">
+						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l2-${qix.count}|">Version</label>
+
+						<select class="custom-select mr-sm-2" id="|l2-${qix.count}|" name="version">
+							<option z:each="swv, i : ${software[#software.indexOf(qi.s)].versions}" z:value="${swv}"
+								z:selected="${swv == version}" z:text="${swv}"></option>
+						</select>
+					</div>
+				</z:block>
+			</div>
+
+			<div class="form-row align-items-center mt-3">
+				<div class="col-auto">
+					<button type="button" class="btn btn-secondary mb-2" id="add-program-filter-btn">Add Program Filter</button>
+				</div>
+				<div class="col-auto">
+					<button type="button" class="btn btn-secondary mb-2" id="add-data-filter-btn">Add Data Filter</button>
+				</div>
+			</div>
+
+			<button type="submit" class="btn btn-primary mt-3">Submit</button>
+		</form>
 
 
 		<div class="row mt-5" z:if="${entries}">
@@ -93,7 +127,7 @@
 				</tbody>
 			</table>
 	
-			<nav aria-label="paging entriess">
+			<nav aria-label="paging entries">
 				<ul class="pagination pagination-sm" id="stable-pager">
 					<li class="page-item disabled" data-page-id="previous">
 						<a class="page-link" role="button">Previous</a>

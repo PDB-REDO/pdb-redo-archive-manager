@@ -84,11 +84,11 @@ data_service::data_service()
 			{
 				auto type_s = type.as<std::string>();
 				if (type_s == "string")
-					m_prop_types[name] = PropertyType::String;
+					m_properties.emplace_back(name, PropertyType::String);
 				else if (type_s == "number")
-					m_prop_types[name] = PropertyType::Number;
+					m_properties.emplace_back(name, PropertyType::Number);
 				else if (type_s == "boolean")
-					m_prop_types[name] = PropertyType::Boolean;
+					m_properties.emplace_back(name, PropertyType::Boolean);
 				else
 					continue;
 				break;
@@ -98,16 +98,34 @@ data_service::data_service()
 		{
 			auto type_s = value.as<std::string>();
 			if (type_s == "string")
-				m_prop_types[name] = PropertyType::String;
+				m_properties.emplace_back(name, PropertyType::String);
 			else if (type_s == "number")
-				m_prop_types[name] = PropertyType::Number;
+				m_properties.emplace_back(name, PropertyType::Number);
 			else if (type_s == "boolean")
-				m_prop_types[name] = PropertyType::Boolean;
+				m_properties.emplace_back(name, PropertyType::Boolean);
 		}
 		
-		if (not m_prop_types.count(name))
-			throw std::runtime_error("Property " + name + " has unknown type");
+		// if (not m_prop_types.count(name))
+		// 	throw std::runtime_error("Property " + name + " has unknown type");
 	}
+}
+
+// --------------------------------------------------------------------
+
+PropertyType data_service::get_property_type(const std::string &name) const
+{
+	for (auto &p : m_properties)
+	{
+		if (p.name == name)
+			return p.type;
+	}
+
+	std::throw_with_nested(std::runtime_error("Undefined property " + name));
+}
+
+std::vector<Property> data_service::get_properties() const
+{
+	return m_properties;
 }
 
 // --------------------------------------------------------------------
@@ -150,6 +168,13 @@ data_service &data_service::instance()
 			{ OperatorType::GE, "ge" },
 			{ OperatorType::GT, "gt" },
 			{ OperatorType::NE, "ne" }
+		});
+
+		zeep::value_serializer<PropertyType>::init("property-type", {
+			{ PropertyType::Null, "null" },
+			{ PropertyType::Boolean, "boolean" },
+			{ PropertyType::String, "string" },
+			{ PropertyType::Number, "number" }
 		});
 
 		s_instance.reset(new data_service);
@@ -733,7 +758,7 @@ std::vector<DbEntry> data_service::query(const Query &q, uint32_t page, uint32_t
 	   << " offset " << (page * page_size) << " rows"
 	   << " fetch first " << page_size << " rows only";
 
-std::cerr << qs.str() << std::endl;
+// std::cerr << qs.str() << std::endl;
 
 	std::vector<DbEntry> entries;
 
@@ -750,6 +775,43 @@ std::cerr << qs.str() << std::endl;
 
 size_t data_service::count(const Query &q)
 {
-	return 0;
+	pqxx::work tx(db_connection::instance());
+
+	std::stringstream qs;
+	qs << "select count(*)"
+	   << "  from " << (q.latest ? "latest_dbentry" : "dbentry") << " e";
+	
+	if (not q.filters.empty())
+	{
+		qs << " where id in (";
+
+		bool first = true;
+
+		for (auto &filter : q.filters)
+		{
+			if (not first)
+				qs << " intersect ";
+			first = false;
+
+			if (filter.type == FilterType::Software)
+			{
+				qs << "select dbentry_id from dbentry_software_view s where"
+				   << " s.name = " << tx.quote(filter.subject)
+				   << " and s.version ";
+				
+				if (filter.value == "undefined")
+					qs << "is null";
+				else
+					qs << "= " + tx.quote(filter.value);
+				
+				qs << std::endl;
+			}
+		}
+
+		qs << ')';
+	}
+
+	auto r = tx.exec1(qs.str());
+	return r.front().as<size_t>();
 }
 
