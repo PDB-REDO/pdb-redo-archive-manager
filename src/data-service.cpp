@@ -171,7 +171,6 @@ data_service &data_service::instance()
 		});
 
 		zeep::value_serializer<PropertyType>::init("property-type", {
-			{ PropertyType::Null, "null" },
 			{ PropertyType::Boolean, "boolean" },
 			{ PropertyType::String, "string" },
 			{ PropertyType::Number, "number" }
@@ -752,7 +751,7 @@ std::vector<DbEntry> data_service::query(const Query &q, uint32_t page, uint32_t
 					break;
 				
 				case FilterType::Data:
-					switch (m_prop_types.at(filter.subject))
+					switch (get_property_type(filter.subject))
 					{
 						case PropertyType::Boolean:
 							qs << "select dbentry_id from dbentry_property_boolean_view where"
@@ -850,18 +849,75 @@ size_t data_service::count(const Query &q)
 				qs << " intersect ";
 			first = false;
 
-			if (filter.type == FilterType::Software)
+			switch (filter.type)
 			{
-				qs << "select dbentry_id from dbentry_software_view s where"
-				   << " s.name = " << tx.quote(filter.subject)
-				   << " and s.version ";
+				case FilterType::Software:
+					qs << "select dbentry_id from dbentry_software_view s where"
+						<< " s.name = " << tx.quote(filter.subject)
+						<< " and s.version ";
+					
+					if (filter.value == "undefined")
+						qs << "is null";
+					else
+						qs << "= " + tx.quote(filter.value);
+					
+					qs << std::endl;
+					break;
 				
-				if (filter.value == "undefined")
-					qs << "is null";
-				else
-					qs << "= " + tx.quote(filter.value);
-				
-				qs << std::endl;
+				case FilterType::Data:
+					switch (get_property_type(filter.subject))
+					{
+						case PropertyType::Boolean:
+							qs << "select dbentry_id from dbentry_property_boolean_view where"
+								<< " name = " << tx.quote(filter.subject)
+								<< " and value = " << tx.quote(filter.value == "true")
+								<< std::endl;
+							break;
+	
+						case PropertyType::String:
+							qs << "select dbentry_id from dbentry_property_string_view where"
+								<< " name = " << tx.quote(filter.subject)
+								<< " and value " << (filter.op == OperatorType::EQ ? "=" : "<>") << tx.quote(filter.value)
+								<< std::endl;
+							break;
+
+						case PropertyType::Number:
+							qs << "select dbentry_id from dbentry_property_number_view where"
+								<< " name = " << tx.quote(filter.subject)
+								<< " and value ";
+							
+							switch (filter.op)
+							{
+								case OperatorType::LT:
+									qs << "<";
+									break;
+
+								case OperatorType::LE:
+									qs << "<=";
+									break;
+
+								case OperatorType::EQ:
+									qs << "=";
+									break;
+
+								case OperatorType::GE:
+									qs << ">=";
+									break;
+
+								case OperatorType::GT:
+									qs << ">";
+									break;
+
+								case OperatorType::NE:
+									qs << "<>";
+									break;
+							}
+								
+							qs << ' ' << tx.quote(std::stold(filter.value))
+								<< std::endl;
+							break;
+					}
+					break;
 			}
 		}
 

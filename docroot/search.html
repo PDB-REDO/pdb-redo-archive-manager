@@ -28,17 +28,19 @@ let page = /*[[${page}]]*/ 1;
 
 	<div class="container">
 
-		<h3 class="mt-3">Search Archive</h3>
+		<h3 class="my-5">Search Archive</h3>
 
 		<form id="query-form">
-			<div class="form-group form-check">
-				<input type="checkbox" class="form-check-input" id="latest-only-cb" z:checked="${query.latest}" name="latest"/>
-				<label class="form-check-label" for="latest-only-cb">Latest version only</label>
+			<div class="form-row">
+				<div class="form-group form-check">
+					<input type="checkbox" class="form-check-input" id="latest-only-cb" z:checked="${query.latest}" name="latest"/>
+					<label class="form-check-label" for="latest-only-cb">Latest version only</label>
+				</div>
 			</div>
 
 			<div class="form-row align-items-center" z:each="qi,qix: ${query.filters}">
 				<z:block z:if="${qi.t == 'sw'}">
-					<div class="col-auto my-1">
+					<div class="col-md-4 my-1">
 						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l1-${qix.count}|">Program</label>
 
 						<input class="form-control" type="text" z:value="${qi.s}" readonly="readonly"/>
@@ -50,7 +52,7 @@ let page = /*[[${page}]]*/ 1;
 						</select> -->
 					</div>
 
-					<div class="col-auto my-1">
+					<div class="col-md-2 my-1">
 						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l2-${qix.count}|">Version</label>
 
 						<select class="custom-select mr-sm-2" id="|l2-${qix.count}|" name="version">
@@ -58,12 +60,14 @@ let page = /*[[${page}]]*/ 1;
 								z:selected="${swv == version}" z:text="${swv}"></option>
 						</select>
 					</div>
+
+					<div class="col-md-6"></div>
 				</z:block>
 			</div>
 
 			<div class="form-row align-items-center" z:each="qi,qix: ${query.filters}">
 				<z:block z:if="${qi.t == 'd'}">
-					<div class="col-auto my-1">
+					<div class="col-md-4 my-1">
 						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l1-${qix.count}|">Data</label>
 
 						<input class="form-control" type="text" z:value="${qi.s}" readonly="readonly"/>
@@ -75,7 +79,9 @@ let page = /*[[${page}]]*/ 1;
 						</select> -->
 					</div>
 
-					<div class="col-auto my-1">
+					
+
+					<div class="col-md-2 my-1">
 						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l2-${qix.count}|">Version</label>
 
 						<select class="custom-select mr-sm-2" id="|l2-${qix.count}|" name="version">
