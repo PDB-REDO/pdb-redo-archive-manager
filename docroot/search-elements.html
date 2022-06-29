@@ -1,0 +1,49 @@
+<!DOCTYPE html SYSTEM "about:legacy-compat">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:z="http://www.hekkelman.com/libzeep/m2" lang="nl">
+
+<body>
+
+	<div class="row" z:fragment="program-filter(program)">
+		<div class="input-group input-group-sm my-2 prog-filter">
+			<div class="input-group-prepend">
+				<label class="input-group-text" z:for="|l-${filter-id}|" z:text="|${program} version|">Program</label>
+			</div>
+
+			<select class="custom-select" z:id="|l-${filter-id}|" z:data-program="${program}">
+				<option z:each="swv : ${software[#software.indexOf(program)].versions}" z:value="${swv}"
+					z:text="${swv}">
+				</option>
+			</select>
+		</div>
+		<i class="fas fa-trash"></i>
+	</div>
+
+	<div class="input-group input-group-sm my-2 prop-filter" z:fragment="property-filter(property)">
+		<div class="input-group-prepend">
+			<label class="input-group-text" z:for="|l-${filter-id}|" z:text="|${property} value|">Property</label>
+		</div>
+
+		<select class="custom-select" z:if="${property-type == 'string'}" z:id="|l-op-${filter-id}|"
+			z:data-property="${property}">
+			<option value="eq">Equals</option>
+			<option value="ne">Not Equals</option>
+		</select>
+
+		<select class="custom-select" z:if="${property-type == 'number'}" z:id="|l-op-${filter-id}|"
+			z:data-property="${property}">
+			<option value="lt">Less Than</option>
+			<option value="le">Less or Equals</option>
+			<option value="eq">Equals</option>
+			<option value="ge">Greater or Equals</option>
+			<option value="gt">Greater</option>
+			<option value="ne">Not Equals</option>
+		</select>
+
+		<input type="text" class="form-control prop-value" z:id="|v-${filter-id}|"
+			z:aria-label="|Value for property ${property}|" />
+	</div>
+
+</body>
+
+</html>

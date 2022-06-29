@@ -15,13 +15,7 @@
 <body>
 
 	<script z:inline="javascript">
-const SOFTWARE = /*[[${software}]]*/ null;
-const QUERY = /*[[${query}]]*/ {};
- 
-const ENTRY_COUNT = /*[[${entry-count}]]*/ 0;
-const PAGE_SIZE = /*[[${page-size}]]*/ 10;
-
-let page = /*[[${page}]]*/ 1;
+		const SOFTWARE = /*[[${software}]]*/ null;
 	</script>
 
 	<nav z:replace="~{menu :: navbar('admin')}"></nav>
@@ -30,84 +24,50 @@ let page = /*[[${page}]]*/ 1;
 
 		<h3 class="my-5">Search Archive</h3>
 
+		<i class="fas fa-trash"></i>
+
+
 		<form id="query-form">
+
 			<div class="form-row">
-				<div class="form-group form-check">
-					<input type="checkbox" class="form-check-input" id="latest-only-cb" z:checked="${query.latest}" name="latest"/>
+
+				<div class="form-group">
+					<input type="checkbox" class="form-check-input" id="latest-only-cb" name="latest" />
 					<label class="form-check-label" for="latest-only-cb">Latest version only</label>
 				</div>
 			</div>
 
-			<div class="form-row align-items-center" z:each="qi,qix: ${query.filters}">
-				<z:block z:if="${qi.t == 'sw'}">
-					<div class="col-md-4 my-1">
-						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l1-${qix.count}|">Program</label>
+			<hr id="add-filter-buttons-div" />
 
-						<input class="form-control" type="text" z:value="${qi.s}" readonly="readonly"/>
-
-						<!-- <select class="custom-select mr-sm-2" z:id="|l1-${qix.count}|" name="program">
-							<option z:each="sw, i : ${software}" z:selected="${qi.s == sw.name}" z:value="${sw.name}"
-								z:text="${sw.name}">
-							</option>
-						</select> -->
-					</div>
-
-					<div class="col-md-2 my-1">
-						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l2-${qix.count}|">Version</label>
-
-						<select class="custom-select mr-sm-2" id="|l2-${qix.count}|" name="version">
-							<option z:each="swv, i : ${software[#software.indexOf(qi.s)].versions}" z:value="${swv}"
-								z:selected="${swv == version}" z:text="${swv}"></option>
-						</select>
-					</div>
-
-					<div class="col-md-6"></div>
-				</z:block>
+			<div class="input-group input-group-sm my-2">
+				<div class="input-group-prepend">
+					<button class="btn btn-outline-secondary" type="button" id="add-program-filter-btn">Add Program
+						Filter</button>
+				</div>
+				<select class="custom-select mr-sm-2" id="add-program-filter-selector">
+					<option z:each="sw : ${software}" z:value="${sw.name}" z:text="${sw.name}">
+					</option>
+				</select>
 			</div>
 
-			<div class="form-row align-items-center" z:each="qi,qix: ${query.filters}">
-				<z:block z:if="${qi.t == 'd'}">
-					<div class="col-md-4 my-1">
-						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l1-${qix.count}|">Data</label>
-
-						<input class="form-control" type="text" z:value="${qi.s}" readonly="readonly"/>
-
-						<!-- <select class="custom-select mr-sm-2" z:id="|l1-${qix.count}|" name="program">
-							<option z:each="sw, i : ${software}" z:selected="${qi.s == sw.name}" z:value="${sw.name}"
-								z:text="${sw.name}">
-							</option>
-						</select> -->
-					</div>
-
-					
-
-					<div class="col-md-2 my-1">
-						<label z:if="${qix.first}" class="mr-sm-2" z:for="|l2-${qix.count}|">Version</label>
-
-						<select class="custom-select mr-sm-2" id="|l2-${qix.count}|" name="version">
-							<option z:each="swv, i : ${software[#software.indexOf(qi.s)].versions}" z:value="${swv}"
-								z:selected="${swv == version}" z:text="${swv}"></option>
-						</select>
-					</div>
-				</z:block>
-			</div>
-
-			<div class="form-row align-items-center mt-3">
-				<div class="col-auto">
-					<button type="button" class="btn btn-secondary mb-2" id="add-program-filter-btn">Add Program Filter</button>
+			<div class="input-group input-group-sm my-2">
+				<div class="input-group-prepend">
+					<button class="btn btn-outline-secondary" type="button" id="add-property-filter-btn">Add Property
+						Filter</button>
 				</div>
-				<div class="col-auto">
-					<button type="button" class="btn btn-secondary mb-2" id="add-data-filter-btn">Add Data Filter</button>
-				</div>
+				<select class="custom-select mr-sm-2" id="add-property-filter-selector">
+					<option z:each="prop : ${properties}" z:value="${prop.name}" z:text="${prop.name}">
+					</option>
+				</select>
 			</div>
 
 			<button type="submit" class="btn btn-primary mt-3">Submit</button>
 		</form>
 
 
-		<div class="row mt-5" z:if="${entries}">
+		<div class="row mt-5">
 
-			<p>The search resulted in <span z:text="#numbers.formatDecimal(entry-count, 1, 0)"></span> entries.</p>
+			<p>The search resulted in <span id="entry-count-span">0</span> entries.</p>
 
 			<table class="table table-sm table-hover mt-3" id="entries-table" z:fragment="entries-table-fragment">
 				<thead>
@@ -118,7 +78,7 @@ let page = /*[[${page}]]*/ 1;
 						<th colspan="5">Links</th>
 					</tr>
 				</thead>
-	
+
 				<tbody>
 					<tr z:each="c, i: ${entries}" class="entries-row" z:data-row-id="${c.id}" role="button">
 						<td z:text="${c.id}"></td>
@@ -132,7 +92,7 @@ let page = /*[[${page}]]*/ 1;
 					</tr>
 				</tbody>
 			</table>
-	
+
 			<nav aria-label="paging entries">
 				<ul class="pagination pagination-sm" id="stable-pager">
 					<li class="page-item disabled" data-page-id="previous">

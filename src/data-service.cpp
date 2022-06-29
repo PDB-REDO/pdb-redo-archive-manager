@@ -797,6 +797,9 @@ std::vector<DbEntry> data_service::query(const Query &q, uint32_t page, uint32_t
 								case OperatorType::NE:
 									qs << "<>";
 									break;
+								
+								default:
+									throw std::invalid_argument("Invalid operator");
 							}
 								
 							qs << ' ' << tx.quote(std::stold(filter.value))
@@ -911,6 +914,9 @@ size_t data_service::count(const Query &q)
 								case OperatorType::NE:
 									qs << "<>";
 									break;
+								
+								default:
+									throw std::invalid_argument("Invalid operator");
 							}
 								
 							qs << ' ' << tx.quote(std::stold(filter.value))

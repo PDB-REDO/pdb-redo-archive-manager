@@ -1,21 +1,18 @@
 import "regenerator-runtime/runtime";
-
 import 'bootstrap';
 
-import { construct_query } from "./search";
-
-/* global page, compound, PAGE_SIZE, ENTRY_COUNT */
+const _singleton = Symbol();
+const PAGE_SIZE = 10;
 
 class Pager {
-	constructor(ul, pageCount, pageSize, tbl) {
+	constructor(singletonToken) {
+		if (_singleton !== singletonToken)
+			throw new Error('Cannot instantiate directly');
 
-		this.page = 1;
-		this.lastPage = pageCount;
-		this.pageSize = pageSize;
-		this.tbl = tbl;
+		this.ul = document.getElementById('stable-pager');
+		this.tbl = document.getElementById('entries-table');
 
-		this.ul = ul;
-		this.buttons = [...ul.querySelectorAll('li')];
+		this.buttons = [...this.ul.querySelectorAll('li')];
 		this.pageButtonCount = this.buttons.length - 4;
 		this.halfPageButtonCount = Math.round((this.pageButtonCount - 1) / 2);
 
@@ -25,8 +22,28 @@ class Pager {
 					this.turnPage(btn);
 			});
 		});
+	}
+
+	static get instance() {
+		if (this[_singleton] == undefined)
+			this[_singleton] = new Pager(_singleton);
+		
+		return this[_singleton];
+	}
+	
+	setQuery(q, entryCount) {
+		this.q = JSON.stringify(q);
+
+		let lastPage = Math.round(entryCount / PAGE_SIZE);
+		if (lastPage * PAGE_SIZE < entryCount)
+			lastPage += 1;
+
+		this.page = 1;
+		this.lastPage = lastPage;
+		this.pageSize = PAGE_SIZE;
 
 		this.updateButtons();
+		this.selectPage(1);
 	}
 
 	turnPage(btn) {
@@ -49,12 +66,14 @@ class Pager {
 		if (page < 1)
 			page = 1;
 
-		const q = construct_query();
+		this.selectPage(page);
+	}
 
+	selectPage(page) {
 		fetch(`./entries-table?page=${page - 1}`, {
 			credentials: "include",
 			method: "post",
-			body: q
+			body: this.q
 		}).then(reply => {
 			if (reply.ok)
 				return reply.text();
@@ -92,13 +111,4 @@ class Pager {
 	}
 }
 
-window.addEventListener('load', () => {
-	let lastPage = Math.round(ENTRY_COUNT / PAGE_SIZE);
-	if (lastPage * PAGE_SIZE < ENTRY_COUNT)
-		lastPage += 1;
-	
-	const ul = document.getElementById('stable-pager');
-	const tbl = document.getElementById('entries-table');
-	if (ul != null && tbl != null)
-		new Pager(ul, lastPage, PAGE_SIZE, tbl);
-})
+export default Pager;

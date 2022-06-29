@@ -1,5 +1,7 @@
 @use "sass:math";
 
+@import '../node_modules/@fortawesome/fontawesome-free/css/all.min.css';
+
 /* (Required) Import Bootstrap */
 @import "bootstrap/scss/_functions";
 @import "bootstrap/scss/_variables";

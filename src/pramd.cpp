@@ -73,7 +73,7 @@ class software_expression_utility_object : public zh::expression_utility_object<
 
 				auto sw = parameters.front().as<std::string>();
 
-				for (size_t ix = 0; ix < sw.length(); ++ix)
+				for (size_t ix = 0; ix < software.size(); ++ix)
 				{
 					if (software[ix].name != sw)
 						continue;
@@ -117,6 +117,17 @@ class api_rest_controller : public zh::rest_controller
 
 		// return specific property item
 		map_get_request("q/property/{name}", &api_rest_controller::get_property, "name");
+
+		// Actual query support
+
+		// return all results
+		map_post_request("q/query", &api_rest_controller::query_all, "query");
+
+		// return paged results
+		map_post_request("q/query/{page}", &api_rest_controller::query_page, "query", "page");
+
+		// return the count(*) for query
+		map_post_request("q/count", &api_rest_controller::query_count, "query");
 	}
 
 	std::vector<Software> get_all_software()
@@ -165,6 +176,23 @@ class api_rest_controller : public zh::rest_controller
 		return rep;
 	}
 
+	std::vector<DbEntry> query_all(Query q)
+	{
+		return {};
+	}
+
+	std::vector<DbEntry> query_page(Query q, int page)
+	{
+		auto &ds = data_service::instance();
+		return ds.query(q, page, kPageSize);
+	}
+
+	size_t query_count(Query q)
+	{
+		auto &ds = data_service::instance();
+		return ds.count(q);
+	}
+
   private:
 	fs::path m_pdb_redo_dir;
 };
@@ -175,11 +203,15 @@ class pram_html_controller : public zh::html_controller
 {
   public:
 	pram_html_controller()
+		: m_next_id(1)
 	{
 		mount("", &pram_html_controller::welcome);
 
 		mount("search", &pram_html_controller::search);
 		mount("entries-table", &pram_html_controller::entries_table);
+
+		mount("program-filter", &pram_html_controller::program_filter);
+		mount("property-filter", &pram_html_controller::property_filter);
 
 		mount("{css,scripts,fonts,images}/", &pram_html_controller::handle_file);
 	}
@@ -188,8 +220,12 @@ class pram_html_controller : public zh::html_controller
 	void search(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 
 	void entries_table(const zh::request &request, const zh::scope &scope, zh::reply &reply);
+	void program_filter(const zh::request &request, const zh::scope &scope, zh::reply &reply);
+	void property_filter(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 
 	json processQuery(const zh::request &request);
+
+	std::atomic<int> m_next_id;
 };
 
 void pram_html_controller::welcome(const zh::request &request, const zh::scope &scope, zh::reply &reply)
@@ -209,55 +245,10 @@ void pram_html_controller::search(const zh::request &request, const zh::scope &s
 	to_element(se, software);
 	sub.put("software", se);
 
-	int page = request.get_parameter("page", 0);
-
-	std::string query;
-	if (request.get_method() == "POST")
-		query = request.get_payload();
-	else
-		query = R"(
-{
-	"latest": false,
-	"filters": [
-		{
-			"t": "sw",
-			"s": "binliner",
-			"o": "eq",
-			"v": "1.04"
-		},
-		{
-			"t": "sw",
-			"s": "BLASTp",
-			"o": "eq",
-			"v": "2.6.0+"
-		}
-	]
-}
-	)";
-
-	if (not query.empty())
-	{
-		json jq;
-		parse_json(query, jq);
-
-		sub.put("query", jq);
-
-		Query q;
-		from_element(jq, q);
-
-		auto dbentries = ds.query(q, page, kPageSize);
-
-		if (not dbentries.empty())
-		{
-			json entries;
-			to_element(entries, dbentries);
-			sub.put("entries", entries);
-
-			sub.put("entry-count", ds.count(q));
-			sub.put("page-size", kPageSize);
-			sub.put("page", 1);
-		}
-	}
+	auto properties = ds.get_properties();
+	json pe;
+	to_element(pe, properties);
+	sub.put("properties", pe);
 
 	get_template_processor().create_reply_from_template("search", sub, reply);
 }
@@ -273,6 +264,48 @@ void pram_html_controller::entries_table(const zh::request &request, const zh::s
 	sub.put("entries", entries);
 
 	return get_template_processor().create_reply_from_template("search::entries-table-fragment", sub, reply);
+}
+
+void pram_html_controller::program_filter(const zh::request &request, const zh::scope &scope, zh::reply &reply)
+{
+	using json = zeep::json::element;
+
+	zh::scope sub(scope);
+	auto &ds = data_service::instance();
+
+	auto software = ds.get_software();
+	json se;
+	to_element(se, software);
+	sub.put("software", se);
+
+	auto program = request.get_parameter("program");
+	sub.put("program", program);
+
+	sub.put("filter-id", m_next_id++);
+
+	return get_template_processor().create_reply_from_template("search-elements::program-filter", sub, reply);
+}
+
+void pram_html_controller::property_filter(const zh::request &request, const zh::scope &scope, zh::reply &reply)
+{
+	using json = zeep::json::element;
+
+	zh::scope sub(scope);
+	auto &ds = data_service::instance();
+
+	auto properties = ds.get_properties();
+	json se;
+	to_element(se, properties);
+	sub.put("properties", se);
+
+	auto property = request.get_parameter("property");
+	sub.put("property", property);
+
+	sub.put("property-type", ds.get_property_type(property));
+
+	sub.put("filter-id", m_next_id++);
+
+	return get_template_processor().create_reply_from_template("search-elements::property-filter", sub, reply);
 }
 
 json pram_html_controller::processQuery(const zh::request &request)

@@ -1,9 +1,10 @@
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const UglifyJsPlugin = require('uglify-js-plugin');
-const webpack = require("webpack");
+const webpack = require('webpack');
 
 const SCRIPTS = __dirname + "/webapp/";
-const DEST = __dirname + "/docroot/scripts/";
+const SCSS = __dirname + "/scss/";
+const DEST = __dirname + "/docroot/";
 
 module.exports = (env) => {
 
@@ -11,7 +12,9 @@ module.exports = (env) => {
 		entry: {
 			index: SCRIPTS + "index.js",
 			lists: SCRIPTS + "lists.js",
-			search: SCRIPTS + "search.js"
+			search: SCRIPTS + "search.js",
+
+			'pa-style': SCSS + "pdb-redo-bootstrap.scss"
 		},
 
 		module: {
@@ -28,7 +31,11 @@ module.exports = (env) => {
 				},
 				{
 					test: /\.css$/,
-					use: ['style-loader', 'css-loader']
+					use: [
+						// 'style-loader',
+						MiniCssExtractPlugin.loader,
+						'css-loader'
+					]
 				},
 				{
 					test: /\.(eot|svg|ttf|woff(2)?)(\?v=\d+\.\d+\.\d+)?/,
@@ -43,41 +50,62 @@ module.exports = (env) => {
 				{
 					test: /\.s[ac]ss$/i,
 					use: [
-					  // Creates `style` nodes from JS strings
-					  'style-loader',
-					  // Translates CSS into CommonJS
-					  'css-loader',
-					  // Compiles Sass to CSS
-					  'sass-loader'
+						MiniCssExtractPlugin.loader,
+						'css-loader',
+						'sass-loader'
 					]
-				  }
+				},
+
+				{
+					test: /\.(png|jpg|gif)$/,
+					use: [
+						{
+							loader: 'file-loader',
+							options: {
+								outputPath: "css/images",
+								publicPath: "images/"
+							},
+						},
+					]
+				}
 			]
 		},
 
 		output: {
 			path: DEST,
-			filename: "[name].js"
+			filename: "./scripts/[name].js"
 		},
-
+	
 		plugins: [
-			new CleanWebpackPlugin(),
+			new CleanWebpackPlugin({
+				cleanOnceBeforeBuildPatterns: [
+					'css/**/*',
+					'css/*',
+					'scripts/**/*',
+					'fonts/**/*'
+				]
+			}),
 			new webpack.ProvidePlugin({
 				$: 'jquery',
 				jQuery: 'jquery',
 				Popper: ['popper.js', 'default']
+			}),
+			new MiniCssExtractPlugin({
+				filename: './css/[name].css',
+				chunkFilename: './css/[id].css'
 			})
 		]
 	};
 
-    const PRODUCTIE = env != null && env.PRODUCTIE;
+	const PRODUCTIE = env != null && env.PRODUCTIE;
 
 	if (PRODUCTIE) {
 		webpackConf.mode = "production";
-		webpackConf.plugins.push(new UglifyJsPlugin({parallel: 4}))
+		webpackConf.plugins.push(new UglifyJsPlugin({ parallel: 4 }))
 	} else {
 		webpackConf.mode = "development";
 		webpackConf.devtool = 'source-map';
-		webpackConf.plugins.push(new webpack.optimize.AggressiveMergingPlugin())
+		// webpackConf.plugins.push(new webpack.optimize.AggressiveMergingPlugin())
 	}
 
 	return webpackConf;
