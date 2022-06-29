@@ -1,52 +1,5 @@
 import Pager from "./lists";
 
-export function construct_query() {
-	const programSelector = document.getElementById('inputProgramName');
-	const versionSelector = document.getElementById('inputProgramVersion');
-
-	// return `program=${encodeURIComponent(programSelector.value)}&version=${encodeURIComponent(versionSelector.value)}`;
-
-	return JSON.stringify({
-		latest: true,
-		filters: [
-			{
-				t: 'sw',
-				o: 'eq',
-				s: 'BLASTp',
-				v: '2.6.0+'
-			},
-			{
-				t: 'd',
-				o: 'eq',
-				s: 'NBBFLIP',
-				v: '0'
-			}
-		]
-	});
-}
-
-function updateVersionSelector() {
-
-	const programSelector = document.getElementById('inputProgramName');
-	const versionSelector = document.getElementById('inputProgramVersion');
-
-	while (versionSelector.length > 0)
-		versionSelector.remove(0);
-
-	for (const sw of SOFTWARE) {
-		if (sw.name != programSelector.value)
-			continue;
-
-		for (const version of sw.versions) {
-			const opt = document.createElement("option");
-			opt.text = version;
-			versionSelector.add(opt);
-		}
-
-		break;
-	}
-}
-
 class Query {
 	constructor(f) {
 		this.form = f;
@@ -62,7 +15,7 @@ class Query {
 		const fd = new FormData();
 		fd.append('query', JSON.stringify(query));
 
-		fetch('/v1/q/count', {
+		fetch('v1/q/count', {
 			credentials: "include",
 			method: "post",
 			body: fd
