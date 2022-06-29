@@ -1,7 +1,5 @@
 @use "sass:math";
 
-@import '../node_modules/@fortawesome/fontawesome-free/css/all.min.css';
-
 /* (Required) Import Bootstrap */
 @import "bootstrap/scss/_functions";
 @import "bootstrap/scss/_variables";
@@ -34,6 +32,10 @@ $nav-link-padding-y: math.div($spacer, 2);
 
 // (Required) Import Bootstrap
 @import "bootstrap/scss/bootstrap";
+
+@import "~bootstrap-icons/font/bootstrap-icons.css";
+
+@import './style.css';
 
 .navbar-dark {
 	.navbar-nav {

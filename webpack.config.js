@@ -1,6 +1,7 @@
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const webpack = require('webpack');
+const path = require('path');
 
 const SCRIPTS = __dirname + "/webapp/";
 const SCSS = __dirname + "/scss/";
@@ -30,20 +31,11 @@ module.exports = (env) => {
 					}
 				},
 				{
-					test: /\.css$/,
-					use: [
-						// 'style-loader',
-						MiniCssExtractPlugin.loader,
-						'css-loader'
-					]
-				},
-				{
-					test: /\.(eot|svg|ttf|woff(2)?)(\?v=\d+\.\d+\.\d+)?/,
-					loader: 'file-loader',
-					options: {
-						name: '[name].[ext]',
-						outputPath: '../fonts/',
-						publicPath: 'fonts/'
+					test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+					include: path.resolve(__dirname, './node_modules/bootstrap-icons/font/fonts'),
+					type: 'asset/resource',
+					generator: {
+						filename: 'fonts/[name][ext][query]'
 					}
 				},
 
@@ -58,15 +50,10 @@ module.exports = (env) => {
 
 				{
 					test: /\.(png|jpg|gif)$/,
-					use: [
-						{
-							loader: 'file-loader',
-							options: {
-								outputPath: "css/images",
-								publicPath: "images/"
-							},
-						},
-					]
+					type: 'asset/resource',
+					generator: {
+						filename: 'images/[hash][ext][query]'
+					}
 				}
 			]
 		},
@@ -75,12 +62,11 @@ module.exports = (env) => {
 			path: DEST,
 			filename: "./scripts/[name].js"
 		},
-	
+
 		plugins: [
 			new CleanWebpackPlugin({
 				cleanOnceBeforeBuildPatterns: [
 					'css/**/*',
-					'css/*',
 					'scripts/**/*',
 					'fonts/**/*'
 				]

@@ -150,7 +150,7 @@ target_compile_definitions(pramd
 set(webpack_input
 	${PROJECT_SOURCE_DIR}/webapp/index.js
 	${PROJECT_SOURCE_DIR}/webapp/lists.js
-	${PROJECT_SOURCE_DIR}/webapp/pdb-redo-bootstrap.scss
+	${PROJECT_SOURCE_DIR}/scss/pdb-redo-bootstrap.scss
 	${PROJECT_SOURCE_DIR}/webapp/search.js)
 
 set(webpack_output ${PROJECT_SOURCE_DIR}/docroot/scripts/index.js)

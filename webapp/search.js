@@ -1,4 +1,3 @@
-import { post } from "jquery";
 import Pager from "./lists";
 
 export function construct_query() {
@@ -30,7 +29,7 @@ function updateVersionSelector() {
 
 	const programSelector = document.getElementById('inputProgramName');
 	const versionSelector = document.getElementById('inputProgramVersion');
-	
+
 	while (versionSelector.length > 0)
 		versionSelector.remove(0);
 
@@ -91,7 +90,7 @@ class Query {
 			latest: document.getElementById('latest-only-cb').checked,
 			filters: []
 		};
-		
+
 		const progFilters = document.querySelectorAll('div.prog-filter select');
 		for (const f of progFilters) {
 			const program = f.getAttribute('data-program');
@@ -109,34 +108,40 @@ class Query {
 			const property = f.getAttribute('data-property');
 			const v = f.parentNode.querySelector('input.prop-value');
 
-			query.filters.push({
-				"t": "d",
-				"s": property,
-				"o": f.value,
-				"v": v.value
-			});
+			if (v === null) {	// boolean switch/value
+				query.filters.push({
+					"t": "d",
+					"s": property,
+					"o": "eq",
+					"v": f.value == "true"
+				});
+			} else {
+				query.filters.push({
+					"t": "d",
+					"s": property,
+					"o": f.value,
+					"v": v.value
+				});
+			}
 		}
 
-
-		console.log(query);
+		// console.log(query);
 
 		return query;
 	}
 }
 
-function createElement( str ) {
-    var frag = document.createDocumentFragment();
+function createElement(str) {
+	var frag = document.createDocumentFragment();
 
-    var elem = document.createElement('div');
-    elem.innerHTML = str;
+	var elem = document.createElement('div');
+	elem.innerHTML = str;
 
-    while (elem.childNodes[0]) {
-        frag.appendChild(elem.childNodes[0]);
-    }
-    return frag;
+	while (elem.childNodes[0]) {
+		frag.appendChild(elem.childNodes[0]);
+	}
+	return frag;
 }
-
-
 
 window.addEventListener('load', () => {
 	const f = document.getElementById("query-form");
@@ -156,7 +161,16 @@ window.addEventListener('load', () => {
 			if (r.ok)
 				return r.text();
 		}).then(filter => {
-			f.insertBefore(createElement(filter), addBtnsDiv);
+			const filterElem = createElement(filter);
+			const filterId = filterElem.firstChild.id;
+			const deleteFilterBtn = filterElem.querySelector('button.bi-trash');
+			deleteFilterBtn.addEventListener('click', (e) => {
+				e.preventDefault();
+
+				const node = document.getElementById(filterId);
+				f.removeChild(node);
+			});
+			f.insertBefore(filterElem, addBtnsDiv);
 		});
 	});
 
@@ -171,9 +185,17 @@ window.addEventListener('load', () => {
 			if (r.ok)
 				return r.text();
 		}).then(filter => {
-			f.insertBefore(createElement(filter), addBtnsDiv);
+			const filterElem = createElement(filter);
+			const filterId = filterElem.firstChild.id;
+			const deleteFilterBtn = filterElem.querySelector('button.bi-trash');
+			deleteFilterBtn.addEventListener('click', (e) => {
+				e.preventDefault();
+
+				const node = document.getElementById(filterId);
+				f.removeChild(node);
+			});
+			f.insertBefore(filterElem, addBtnsDiv);
 		});
 	});
-
 
 })

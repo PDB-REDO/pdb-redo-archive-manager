@@ -4,44 +4,65 @@
 
 <body>
 
-	<div class="row" z:fragment="program-filter(program)">
-		<div class="input-group input-group-sm my-2 prog-filter">
-			<div class="input-group-prepend">
-				<label class="input-group-text" z:for="|l-${filter-id}|" z:text="|${program} version|">Program</label>
-			</div>
-
-			<select class="custom-select" z:id="|l-${filter-id}|" z:data-program="${program}">
-				<option z:each="swv : ${software[#software.indexOf(program)].versions}" z:value="${swv}"
-					z:text="${swv}">
-				</option>
-			</select>
+	<div z:fragment="program-filter(program)" class="input-group input-group-sm my-2 prog-filter"
+		z:id="|p-${filter-id}|">
+		<div class="input-group-prepend">
+			<label class="input-group-text" z:for="|l-${filter-id}|" z:text="|${program} version|">Program</label>
 		</div>
-		<i class="fas fa-trash"></i>
+
+		<select class="custom-select" z:id="|l-${filter-id}|" z:data-program="${program}">
+			<option z:each="swv : ${software[#software.indexOf(program)].versions}" z:value="${swv}" z:text="${swv}">
+			</option>
+		</select>
+
+		<div class="input-group-append">
+			<button type="button" class="btn btn-outline-secondary bi bi-trash" aria-label="Delete"
+				z:data-id="|p-${filter-id}|"></button>
+		</div>
 	</div>
 
-	<div class="input-group input-group-sm my-2 prop-filter" z:fragment="property-filter(property)">
+	<div class="input-group input-group-sm my-2 prop-filter" z:fragment="property-filter(property)"
+		z:id="|p-${filter-id}|">
 		<div class="input-group-prepend">
 			<label class="input-group-text" z:for="|l-${filter-id}|" z:text="|${property} value|">Property</label>
 		</div>
 
-		<select class="custom-select" z:if="${property-type == 'string'}" z:id="|l-op-${filter-id}|"
-			z:data-property="${property}">
-			<option value="eq">Equals</option>
-			<option value="ne">Not Equals</option>
-		</select>
+		<z:block z:if="${property-type == 'string'}">
+			<select class="custom-select" z:id="|l-op-${filter-id}|"
+				z:data-property="${property}">
+				<option value="eq">Equals</option>
+				<option value="ne">Not Equals</option>
+			</select>
+			<input type="text" class="form-control prop-value" z:id="|v-${filter-id}|"
+				z:aria-label="|Value for property ${property}|" />
+		</z:block>
 
-		<select class="custom-select" z:if="${property-type == 'number'}" z:id="|l-op-${filter-id}|"
-			z:data-property="${property}">
-			<option value="lt">Less Than</option>
-			<option value="le">Less or Equals</option>
-			<option value="eq">Equals</option>
-			<option value="ge">Greater or Equals</option>
-			<option value="gt">Greater</option>
-			<option value="ne">Not Equals</option>
-		</select>
+		<z:block z:if="${property-type == 'number'}">
+			<select class="custom-select" z:id="|l-op-${filter-id}|"
+				z:data-property="${property}">
+				<option value="lt">less than</option>
+				<option value="le">less or equals</option>
+				<option value="eq" selected="selected">equals</option>
+				<option value="ge">greater or equals</option>
+				<option value="gt">greater</option>
+				<option value="ne">not equals</option>
+			</select>
+			<input type="text" class="form-control prop-value" z:id="|v-${filter-id}|"
+				z:aria-label="|Value for property ${property}|" />
+		</z:block>
 
-		<input type="text" class="form-control prop-value" z:id="|v-${filter-id}|"
-			z:aria-label="|Value for property ${property}|" />
+		<z:block z:if="${property-type == 'boolean'}">
+			<select class="custom-select" z:id="|v-${filter-id}|"
+				z:data-property="${property}">
+				<option value="true">is true</option>
+				<option value="false">is false</option>
+			</select>
+		</z:block>
+
+		<div class="input-group-append">
+			<button type="button" class="btn btn-outline-secondary bi bi-trash" aria-label="Delete"
+				z:data-id="|p-${filter-id}|"></button>
+		</div>
 	</div>
 
 </body>
