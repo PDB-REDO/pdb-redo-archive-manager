@@ -207,7 +207,6 @@ class pram_html_controller : public zh::html_controller
 	{
 		mount("", &pram_html_controller::welcome);
 
-		mount("search", &pram_html_controller::search);
 		mount("entries-table", &pram_html_controller::entries_table);
 
 		mount("program-filter", &pram_html_controller::program_filter);
@@ -217,7 +216,6 @@ class pram_html_controller : public zh::html_controller
 	}
 
 	void welcome(const zh::request &request, const zh::scope &scope, zh::reply &reply);
-	void search(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 
 	void entries_table(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 	void program_filter(const zh::request &request, const zh::scope &scope, zh::reply &reply);
@@ -229,11 +227,6 @@ class pram_html_controller : public zh::html_controller
 };
 
 void pram_html_controller::welcome(const zh::request &request, const zh::scope &scope, zh::reply &reply)
-{
-	get_template_processor().create_reply_from_template("index.html", scope, reply);
-}
-
-void pram_html_controller::search(const zh::request &request, const zh::scope &scope, zh::reply &reply)
 {
 	using json = zeep::json::element;
 
@@ -250,7 +243,7 @@ void pram_html_controller::search(const zh::request &request, const zh::scope &s
 	to_element(pe, properties);
 	sub.put("properties", pe);
 
-	get_template_processor().create_reply_from_template("search", sub, reply);
+	get_template_processor().create_reply_from_template("index", sub, reply);
 }
 
 void pram_html_controller::entries_table(const zh::request &request, const zh::scope &scope, zh::reply &reply)
@@ -263,7 +256,7 @@ void pram_html_controller::entries_table(const zh::request &request, const zh::s
 
 	sub.put("entries", entries);
 
-	return get_template_processor().create_reply_from_template("search::entries-table-fragment", sub, reply);
+	return get_template_processor().create_reply_from_template("index::entries-table-fragment", sub, reply);
 }
 
 void pram_html_controller::program_filter(const zh::request &request, const zh::scope &scope, zh::reply &reply)
