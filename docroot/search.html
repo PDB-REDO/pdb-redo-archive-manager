@@ -26,15 +26,16 @@
 
 		<form id="query-form">
 
-			<div class="form-row">
-
-				<div class="form-group">
-					<input type="checkbox" class="form-check-input" id="latest-only-cb" name="latest" />
-					<label class="form-check-label" for="latest-only-cb">Latest version only</label>
+			<div class="input-group input-group-sm my-2 latest-filter">
+				<div class="input-group-prepend">
+					<label class="input-group-text" for="latest-only-select">Latest or All</label>
 				</div>
+		
+				<select class="custom-select" id="latest-only-select" name="latest">
+					<option value="true">Latest Version Only</option>
+					<option value="false">All Archived Versions</option>
+				</select>
 			</div>
-
-
 			
 			<hr id="add-filter-buttons-div" />
 

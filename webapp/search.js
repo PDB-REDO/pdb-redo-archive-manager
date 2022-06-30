@@ -40,9 +40,12 @@ class Query {
 
 	constructQuery() {
 		let query = {
-			latest: document.getElementById('latest-only-cb').checked,
+			latest: true,
 			filters: []
 		};
+
+		const latestSelect = document.getElementById('latest-only-select');
+		query.latest = latestSelect.value == 'true';
 
 		const progFilters = document.querySelectorAll('div.prog-filter select');
 		for (const f of progFilters) {
