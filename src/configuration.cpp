@@ -174,13 +174,14 @@ boost_program_options_configuration::boost_program_options_configuration(int arg
 
 	po::store(po::command_line_parser(argc, argv).options(cmdline_options).positional(p).run(), m_vm);
 
-	fs::path configFile = program_name + ".conf"s;
+	fs::path configFileName = program_name + ".conf"s;
+	fs::path configFile = configFileName;
 
 	if (not fs::exists(configFile) and getenv("HOME") != nullptr)
-		configFile = fs::path(getenv("HOME")) / ".config" / configFile;
+		configFile = fs::path(getenv("HOME")) / ".config" / configFileName;
 
-	if (not fs::exists(configFile) and fs::exists("/etc" / configFile))
-		configFile = "/etc" / configFile;
+	if (not fs::exists(configFile) and fs::exists("/etc" / configFileName))
+		configFile = "/etc" / configFileName;
 
 	if (m_vm.count("config") != 0)
 	{
