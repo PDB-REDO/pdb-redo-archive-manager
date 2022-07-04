@@ -46,7 +46,7 @@
 					<button class="btn btn-outline-secondary" type="button" id="add-program-filter-btn">Add Program
 						Filter</button>
 				</div>
-				<select class="custom-select mr-sm-2" id="add-program-filter-selector">
+				<select class="custom-select" id="add-program-filter-selector">
 					<option z:each="sw : ${software}" z:value="${sw.name}" z:text="${sw.name}">
 					</option>
 				</select>
@@ -57,7 +57,7 @@
 					<button class="btn btn-outline-secondary" type="button" id="add-property-filter-btn">Add Property
 						Filter</button>
 				</div>
-				<select class="custom-select mr-sm-2" id="add-property-filter-selector">
+				<select class="custom-select" id="add-property-filter-selector">
 					<option z:each="prop : ${properties}" z:value="${prop.name}" z:text="${prop.name}">
 					</option>
 				</select>
