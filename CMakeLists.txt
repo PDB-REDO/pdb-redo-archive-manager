@@ -122,7 +122,6 @@ find_program(YARN yarn REQUIRED)
 
 find_package(zeep 5.1.4 REQUIRED)
 find_package(Boost COMPONENTS program_options iostreams REQUIRED)
-# find_package(mongocxx REQUIRED)
 
 # As long as C++20 is not fully implemented (and used)
 find_package(date REQUIRED)

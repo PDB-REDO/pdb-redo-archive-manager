@@ -12,10 +12,52 @@ class Query {
 
 		const query = this.constructQuery();
 
+		switch (e.submitter.id) {
+			case 'btn-search': {
+				const fd = new FormData();
+				fd.append('query', JSON.stringify(query));
+		
+				fetch('v1/q/count', {
+					credentials: "include",
+					method: "post",
+					body: fd
+				}).then(r => {
+					if (r.ok)
+						return r.json();
+					throw 'failed to process query';
+				}).then(data => {
+
+					const counter = document.getElementById('entry-count-span');
+					counter.textContent = data;
+
+					const pager = Pager.instance;
+					pager.setQuery(query, +data);
+				}).catch(err => {
+					console.log(err);
+					alert('Failed to process query');
+				});
+
+				break;
+			}
+
+			case 'btn-export':
+				this.form['query'].value = JSON.stringify(query);
+				this.form.submit();
+				break;
+		}
+
+		return false;
+	}
+
+	export(e) {
+		e.preventDefault();
+
+		const query = this.constructQuery();
+
 		const fd = new FormData();
 		fd.append('query', JSON.stringify(query));
 
-		fetch('v1/q/count', {
+		fetch('export', {
 			credentials: "include",
 			method: "post",
 			body: fd
@@ -24,12 +66,6 @@ class Query {
 				return r.json();
 			throw 'failed to process query';
 		}).then(data => {
-
-			const counter = document.getElementById('entry-count-span');
-			counter.textContent = data;
-
-			const pager = Pager.instance;
-			pager.setQuery(query, +data);
 		}).catch(err => {
 			console.log(err);
 			alert('Failed to process query');

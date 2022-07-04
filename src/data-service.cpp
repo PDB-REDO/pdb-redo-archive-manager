@@ -813,11 +813,13 @@ std::vector<DbEntry> data_service::query(const Query &q, uint32_t page, uint32_t
 		qs << ')';
 	}
 
-	qs << "  order by e.pdb_id, e.data_time"
-	   << " offset " << (page * page_size) << " rows"
-	   << " fetch first " << page_size << " rows only";
+	qs << "  order by e.pdb_id, e.data_time";
 
-// std::cerr << qs.str() << std::endl;
+	if (page > 0)
+		qs << " offset " << (page * page_size) << " rows";
+	
+	if (page_size < std::numeric_limits<uint32_t>::max())
+		qs << " fetch first " << page_size << " rows only";
 
 	std::vector<DbEntry> entries;
 

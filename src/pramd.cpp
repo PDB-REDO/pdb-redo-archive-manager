@@ -24,9 +24,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <zeep/config.hpp>
-
+#include <date/date.h>
 #include <fstream>
+
+#include <zeep/config.hpp>
 
 #include <zeep/http/daemon.hpp>
 #include <zeep/http/html-controller.hpp>
@@ -206,6 +207,7 @@ class pram_html_controller : public zh::html_controller
 		: m_next_id(1)
 	{
 		mount("", &pram_html_controller::welcome);
+		mount("export", &pram_html_controller::export_results);
 
 		mount("entries-table", &pram_html_controller::entries_table);
 
@@ -217,11 +219,13 @@ class pram_html_controller : public zh::html_controller
 
 	void welcome(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 
+	void export_results(const zh::request &request, const zh::scope &scope, zh::reply &reply);
+
 	void entries_table(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 	void program_filter(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 	void property_filter(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 
-	json processQuery(const zh::request &request);
+	json processQuery(const zh::request &request, bool returnAll = false);
 
 	std::atomic<int> m_next_id;
 };
@@ -244,6 +248,45 @@ void pram_html_controller::welcome(const zh::request &request, const zh::scope &
 	sub.put("properties", pe);
 
 	get_template_processor().create_reply_from_template("index", sub, reply);
+}
+
+void pram_html_controller::export_results(const zh::request &request, const zh::scope &scope, zh::reply &reply)
+{
+	using json = zeep::json::element;
+    using namespace date;
+    using namespace std::chrono;
+
+	auto &ds = data_service::instance();
+
+	json jq;
+	parse_json(request.get_parameter("query"), jq);
+
+    auto tp = system_clock::now();
+    auto dp = floor<days>(tp);
+    auto ymd = year_month_day{dp};
+    auto time = make_time(floor<seconds>(tp-dp));
+
+	std::ostringstream ss;
+	ss << ymd << ' ' << time << " UTC";
+
+	json content{
+		{ "date", ss.str() },
+		{ "query", jq },
+		{ "entries", {} }
+	};
+
+	Query q;
+	from_element(jq, q);
+
+	auto dbentries = ds.query(q, 0, std::numeric_limits<uint32_t>::max());
+	to_element(content["entries"], dbentries);
+
+	std::unique_ptr<std::iostream> os(new std::stringstream);
+
+	*os << content;
+
+	reply.set_content(os.release(), "application/json");
+	reply.set_header("Content-Disposition", R"(attachment; filename="pdb-archive-query-result.json")");
 }
 
 void pram_html_controller::entries_table(const zh::request &request, const zh::scope &scope, zh::reply &reply)
@@ -301,33 +344,21 @@ void pram_html_controller::property_filter(const zh::request &request, const zh:
 	return get_template_processor().create_reply_from_template("search-elements::property-filter", sub, reply);
 }
 
-json pram_html_controller::processQuery(const zh::request &request)
+json pram_html_controller::processQuery(const zh::request &request, bool returnAll)
 {
 	json result;
 
 	auto &ds = data_service::instance();
-	int page = request.get_parameter("page", 0);
+	int page = returnAll ? 0 : request.get_parameter("page", 0);
 
-	if (zeep::iequals(request.get_method(), "POST"))
-	{
-		json jq;
-		parse_json(request.get_payload(), jq);
+	json jq;
+	parse_json(request.get_parameter("query"), jq);
 
-		Query q;
-		from_element(jq, q);
+	Query q;
+	from_element(jq, q);
 
-		auto dbentries = ds.query(q, page, kPageSize);
-		to_element(result, dbentries);
-	}
-	else
-	{
-		std::string
-			program = request.get_parameter("program"),
-			version = request.get_parameter("version");
-
-		auto dbentries = ds.query_1(program, version, page, kPageSize);
-		to_element(result, dbentries);
-	}
+	auto dbentries = ds.query(q, page, returnAll ? kPageSize : std::numeric_limits<uint32_t>::max());
+	to_element(result, dbentries);
 
 	return result;
 }

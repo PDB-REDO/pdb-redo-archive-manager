@@ -70,10 +70,13 @@ class Pager {
 	}
 
 	selectPage(page) {
+		const fd = new FormData();
+		fd.append('query', this.q);
+
 		fetch(`./entries-table?page=${page - 1}`, {
 			credentials: "include",
 			method: "post",
-			body: this.q
+			body: fd
 		}).then(reply => {
 			if (reply.ok)
 				return reply.text();

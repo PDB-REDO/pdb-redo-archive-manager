@@ -24,7 +24,9 @@
 
 		<h3 class="my-5">Search Archive</h3>
 
-		<form id="query-form">
+		<form id="query-form" action="export" method="post" enctype="multipart/form-data">
+
+			<input type="hidden" name="query"/>
 
 			<div class="input-group input-group-sm my-2 latest-filter">
 				<div class="input-group-prepend">
@@ -61,12 +63,13 @@
 				</select>
 			</div>
 
-			<button type="submit" class="btn btn-primary mt-3">Submit</button>
+			<div class="d-flex justify-content-between">
+				<button type="submit" class="btn btn-primary mt-3" id="btn-search">Submit</button>
+				<button type="submit" class="btn btn-primary mt-3" id="btn-export">Export</button>
+			</div>
 		</form>
 
-
 		<div class="row mt-5">
-
 			<p>The search resulted in <span id="entry-count-span">0</span> entries.</p>
 
 			<table class="table table-sm table-hover mt-3" id="entries-table" z:fragment="entries-table-fragment">
