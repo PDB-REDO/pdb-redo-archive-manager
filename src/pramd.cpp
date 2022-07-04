@@ -225,8 +225,6 @@ class pram_html_controller : public zh::html_controller
 	void program_filter(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 	void property_filter(const zh::request &request, const zh::scope &scope, zh::reply &reply);
 
-	json processQuery(const zh::request &request, bool returnAll = false);
-
 	std::atomic<int> m_next_id;
 };
 
@@ -286,7 +284,13 @@ void pram_html_controller::export_results(const zh::request &request, const zh::
 	*os << content;
 
 	reply.set_content(os.release(), "application/json");
-	reply.set_header("Content-Disposition", R"(attachment; filename="pdb-archive-query-result.json")");
+
+	std::string filename = "pdb-archive-query-result-(" + ss.str() + ").json";
+	std::string::size_type i = 0;
+	while ((i = filename.find(':', i)) != std::string::npos)
+		filename[i] = '.';
+
+	reply.set_header("Content-Disposition", R"(attachment; filename=")" + filename + "\"");
 }
 
 void pram_html_controller::entries_table(const zh::request &request, const zh::scope &scope, zh::reply &reply)
@@ -295,7 +299,19 @@ void pram_html_controller::entries_table(const zh::request &request, const zh::s
 
 	zh::scope sub(scope);
 
-	json entries = processQuery(request);
+	auto &ds = data_service::instance();
+	int page = request.get_parameter("page", 0);
+
+	json jq;
+	parse_json(request.get_parameter("query"), jq);
+
+	Query q;
+	from_element(jq, q);
+
+	auto dbentries = ds.query(q, page, kPageSize);
+
+	json entries;
+	to_element(entries, dbentries);
 
 	sub.put("entries", entries);
 
@@ -342,25 +358,6 @@ void pram_html_controller::property_filter(const zh::request &request, const zh:
 	sub.put("filter-id", m_next_id++);
 
 	return get_template_processor().create_reply_from_template("search-elements::property-filter", sub, reply);
-}
-
-json pram_html_controller::processQuery(const zh::request &request, bool returnAll)
-{
-	json result;
-
-	auto &ds = data_service::instance();
-	int page = returnAll ? 0 : request.get_parameter("page", 0);
-
-	json jq;
-	parse_json(request.get_parameter("query"), jq);
-
-	Query q;
-	from_element(jq, q);
-
-	auto dbentries = ds.query(q, page, returnAll ? kPageSize : std::numeric_limits<uint32_t>::max());
-	to_element(result, dbentries);
-
-	return result;
 }
 
 // --------------------------------------------------------------------
