@@ -1,0 +1,107 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema#",
+    "$ref": "#/definitions/PdbArchiveQueryResult",
+    "definitions": {
+        "PdbArchiveQueryResult": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description" : "Date and time on which the search was executed", 
+		    "type": "string"
+                },
+                "entries": {
+                    "type": "array",
+		    "description" : "PDB-REDO entries that were selected in the query",
+                    "items": {
+                        "$ref": "#/definitions/Entry"
+                    }
+                },
+                "query": {
+                    "$ref": "#/definitions/Query",
+		    "description": "Details on the used query"
+                }
+            },
+            "required": [
+                "date",
+                "entries",
+                "query"
+            ],
+            "title": "PdbArchiveQueryResult"
+        },
+        "Entry": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "format": "date",
+		    "description" : "Date on which the PDB-REDO databank hit created"
+                },
+                "hash": {
+                    "type": "string",
+		    "description" : "Unique hash for the specific version of the PDB-REDO entry"
+                },
+                "id": {
+                    "type": "string",
+		    "description" : "PDB identifier of the entry"
+                }
+            },
+            "required": [
+                "date",
+                "hash",
+                "id"
+            ],
+            "title": "Entry"
+        },
+        "Query": {
+            "type": "object",
+            "properties": {
+                "filters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Filter"
+                    }
+                },
+                "latest": {
+                    "type": "boolean",
+		    "description" : "Selection of all archived versions (false) or the latest version only (true)" 
+                }
+            },
+            "required": [
+                "filters",
+                "latest"
+            ],
+            "title": "Query"
+        },
+        "Filter": {
+            "type": "object",
+	    "description":"Filters and criteria set for creating the query result",
+            "properties": {
+                "o": {
+                    "type": "string",
+		    "enum" : ["lt", "le", "eq", "ge", "gt", "ne"],
+		    "description" : "Operator used. Options: less than (lt) , less or equals (le), equals (eq), greater or equals (ge), greater than (gt), not equals(ne)"
+                },
+                "s": {
+                    "type": "string",
+		    "description" : "Selection subject"
+                },
+                "t": {
+                    "type": "string",
+		    "enum" : ["sw", "d"],
+		    "description" : "Type of the used subject. Options: software (sw) or data (d)"
+                },
+                "v": {
+                    "type": "string",
+		    "description" : "Value of the selection criterium"
+                }
+            },
+            "required": [
+                "o",
+                "s",
+                "t",
+                "v"
+            ],
+            "title": "Filter"
+        }
+    }
+}
