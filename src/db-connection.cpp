@@ -25,8 +25,10 @@
  */
 
 #include <sstream>
+#include <iostream>
 
-#include "configuration.hpp"
+#include <mcfp/mcfp.hpp>
+
 #include "db-connection.hpp"
 
 // --------------------------------------------------------------------
@@ -36,7 +38,7 @@ thread_local std::unique_ptr<pqxx::connection> db_connection::s_connection;
 
 void db_connection::init()
 {
-	auto &config = configuration::instance();
+	auto &config = mcfp::config::instance();
 
 	std::ostringstream connectionString;
 	for (auto opt: { "db-host", "db-port", "db-dbname", "db-user", "db-password" })

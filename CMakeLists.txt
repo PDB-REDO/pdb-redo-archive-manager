@@ -55,42 +55,23 @@ if(MSVC)
     # make msvc standards compliant...
     add_compile_options(/permissive-)
 
-	macro(get_WIN32_WINNT version)
-		if (WIN32 AND CMAKE_SYSTEM_VERSION)
-			set(ver ${CMAKE_SYSTEM_VERSION})
-			string(REPLACE "." "" ver ${ver})
-			string(REGEX REPLACE "([0-9])" "0\\1" ver ${ver})
-
-			set(${version} "0x${ver}")
-		endif()
-	endmacro()
-
-	get_WIN32_WINNT(ver)
-	add_definitions(-D_WIN32_WINNT=${ver})
-
-	# On Windows, do not install in the system location by default
-	if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-		set(CMAKE_INSTALL_PREFIX "$ENV{LOCALAPPDATA}/${PROJECT_NAME}" CACHE PATH "..." FORCE)
-	endif()
-
-	# On Linux, install in the $HOME/.local folder by default
-elseif(UNIX AND NOT APPLE AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-	set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.local" CACHE PATH "..." FORCE)
+	# This is at least Windows 10, right?
+	add_definitions(-D _WIN32_WINNT=0x0A00)
 endif()
 
 message(STATUS "The program will be installed in ${CMAKE_INSTALL_FULL_SBINDIR}")
 
 # Create a revision file, containing the current git version info, if any
 include(VersionString)
-write_version_header()
+write_version_header("${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 # Optionally use mrc to create resources
-find_package(Mrc)
+find_package(Mrc QUIET)
 
 if(MRC_FOUND)
 	option(USE_RSRC "Use mrc to create resources" ON)
 else()
-	message(WARNING "Not using resources since mrc was not found")
+	message(STATUS "Not using resources since mrc was not found")
 endif()
 
 if(USE_RSRC)
@@ -112,28 +93,19 @@ list(APPEND REQUIRED_LIBRARIES ${STDCPPFS_LIBRARY})
 include(FindAtomic)
 list(APPEND REQUIRED_LIBRARIES ${STDCPPATOMIC_LIBRARY})
 
-# I tend to install libpqxx in my $HOME/.local, but sometimes pkg-config/cmake cannot find it there
-set(ENV{PKG_CONFIG_PATH} "$ENV{HOME}/.local/lib/pkgconfig/")
-pkg_check_modules(PKG_PQ REQUIRED IMPORTED_TARGET libpq libpqxx>=7.2)
-
 find_package(LibArchive REQUIRED)
 
 find_program(YARN yarn REQUIRED)
 
 find_package(zeep 5.1.4 REQUIRED)
-find_package(Boost COMPONENTS program_options iostreams REQUIRED)
+find_package(gxrio REQUIRED)
+find_package(libpqxx 7.8 REQUIRED)
 
 # As long as C++20 is not fully implemented (and used)
 find_package(date REQUIRED)
 
-if(NOT MSVC AND Boost_USE_STATIC_LIBS)
-	find_package(ZLIB REQUIRED)
-	list(APPEND REQUIRED_LIBRARIES ZLIB::ZLIB)
-endif()
-
 add_executable(pramd
 	${PROJECT_SOURCE_DIR}/src/pramd.cpp
-	${PROJECT_SOURCE_DIR}/src/configuration.cpp
 	${PROJECT_SOURCE_DIR}/src/data-service.cpp
 	${PROJECT_SOURCE_DIR}/src/db-connection.cpp
 	${PROJECT_SOURCE_DIR}/src/utilities.cpp)
@@ -168,7 +140,6 @@ add_dependencies(pramd webpack)
 if(USE_RSRC)
 	mrc_target_resources(pramd
 		${PROJECT_SOURCE_DIR}/docroot/
-		${PROJECT_SOURCE_DIR}/rsrc/configuration.json
 		${PROJECT_SOURCE_DIR}/rsrc/db-schema.sql
 		${PROJECT_SOURCE_DIR}/rsrc/data.json.schema
 	)
@@ -176,7 +147,7 @@ endif()
 
 target_include_directories(pramd PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR} ${PQ_INCLUDE_DIRS})
 target_link_libraries(pramd	-static-libgcc -static-libstdc++
-	date::date zeep::zeep std::filesystem Boost::program_options Boost::iostreams PkgConfig::PKG_PQ LibArchive::LibArchive ${REQUIRED_LIBRARIES})
+	date::date zeep::zeep std::filesystem LibArchive::LibArchive ${REQUIRED_LIBRARIES} gxrio::gxrio libpqxx::pqxx)
 
 install(TARGETS pramd
     RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}

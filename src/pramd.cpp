@@ -26,6 +26,7 @@
 
 #include <date/date.h>
 #include <fstream>
+#include <iostream>
 
 #include <zeep/config.hpp>
 
@@ -35,16 +36,16 @@
 #include <zeep/http/rest-controller.hpp>
 #include <zeep/http/security.hpp>
 
-#include "configuration.hpp"
+#include <mcfp/mcfp.hpp>
+
 #include "data-service.hpp"
 #include "db-connection.hpp"
 
 #include "mrsrc.hpp"
+#include "revision.hpp"
 
 namespace zh = zeep::http;
 namespace fs = std::filesystem;
-namespace ba = boost::algorithm;
-namespace pt = boost::posix_time;
 
 using json = zeep::json::element;
 
@@ -368,30 +369,69 @@ int a_main(int argc, char *const argv[])
 
 	int result = 0;
 
-#if USE_RSRC
-	mrsrc::istream config_templ("configuration.json");
-#endif
+	auto &config = mcfp::config::instance();
 
-	auto &config = configuration::init(argc, argv, config_templ, []()
-		{ std::cerr << R"(Command should be either:
+	config.init(
+		"usage: pramd [options] command",
+		mcfp::make_option("help,h", "Display help message"),
+		mcfp::make_option("verbose,v", "Verbose output"),
+		mcfp::make_option("no-daemon,F", "Do not fork into background"),
+		mcfp::make_option<std::string>("pdb-redo-dir", "Directory containing PDB-REDO server data"),
+		mcfp::make_option<std::string>("runs-dir", "Directory containing PDB-REDO server run directories"),
+		mcfp::make_option<std::string>("address", "0.0.0.0", "External address"),
+		mcfp::make_option<uint16_t>("port", 10343, "Port to listen to"),
+		mcfp::make_option<std::string>("context", "The base part of the URL in case this server is behind a reverse proxy"),
+		mcfp::make_option<std::string>("user,u", "User to run the daemon"),
+		mcfp::make_option<std::string>("db-host", "Database host"),
+		mcfp::make_option<std::string>("db-port", "Database port"),
+		mcfp::make_option<std::string>("db-dbname", "Database name"),
+		mcfp::make_option<std::string>("db-user", "Database user name"),
+		mcfp::make_option<std::string>("db-password", "Database password"));
+
+	std::error_code ec;
+	config.parse(argc, argv, ec);
+	if (ec)
+		throw std::runtime_error("Error parsing arguments: " + ec.message());
+
+	if (config.has("version"))
+	{
+		write_version_string(std::cout, config.has("verbose"));
+		exit(0);
+	}
+
+	if (config.has("help"))
+	{
+		std::cerr << config << std::endl;
+		exit(config.has("help") ? 0 : 1);
+	}
+
+	config.parse_config_file("config", "pramd.conf", { fs::current_path().string(), "/etc/" }, ec);
+	if (ec)
+		throw std::runtime_error("Error parsing config file: " + ec.message());
+
+	// --------------------------------------------------------------------
+
+	if (config.has("help") or config.operands().empty())
+	{
+		std::cerr << config << std::endl
+				  << R"(
+Command should be either:
 
   start     start a new server
   stop      start a running server
   status    get the status of a running server
   reload    restart a running server with new options
-			 )" << std::endl; });
+  reinit    re-initialise the database
+  rescan    update the database with new entries
+			 )" << std::endl;
+		exit(config.has("help") ? 0 : 1);
+	}
 
 	// --------------------------------------------------------------------
 
-	if (not config.has("command"))
-	{
-		std::cerr << "No command specified" << std::endl;
-		exit(1);
-	}
-
 	db_connection::init();
 
-	auto command = config.get("command");
+	auto command = config.operands().front();
 
 	if (command == "reinit")
 	{

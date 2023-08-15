@@ -27,6 +27,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 #include <date/date.h>
 
@@ -35,21 +36,19 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-
 #include <zeep/json/parser.hpp>
 #include <zeep/http/reply.hpp>
 
+#include <mcfp/mcfp.hpp>
+#include <gxrio.hpp>
+
 #include "mrsrc.hpp"
 
-#include "configuration.hpp"
 #include "data-service.hpp"
 #include "db-connection.hpp"
 #include "utilities.hpp"
 
 namespace fs = std::filesystem;
-namespace io = boost::iostreams;
 
 // --------------------------------------------------------------------
 
@@ -59,7 +58,7 @@ std::unique_ptr<data_service> data_service::s_instance;
 
 data_service::data_service()
 {
-	auto &config = configuration::instance();
+	auto &config = mcfp::config::instance();
 
 	m_pdb_redo_dir = config.get("pdb-redo-dir");
 
@@ -188,7 +187,7 @@ void data_service::reset()
 {
 	using namespace std::literals;
 
-	auto &config = configuration::instance();
+	auto &config = mcfp::config::instance();
 
 	// --------------------------------------------------------------------
 	// Don't use libpqxx here, it is too limited
@@ -241,7 +240,7 @@ void data_service::reset()
 
 void data_service::rescan()
 {
-	auto &config = configuration::instance();
+	auto &config = mcfp::config::instance();
 
 	// --------------------------------------------------------------------
 
@@ -510,13 +509,7 @@ class ZipWriter
 		if (compressed)
 			name.replace_extension();
 
-		io::filtering_stream<io::input> in;
-
-		if (compressed)
-			in.push(io::gzip_decompressor());
-
-		std::ifstream in_file(file, std::ios::binary);
-		in.push(in_file);
+		gxrio::ifstream in(file);
 
 		for (;;)
 		{

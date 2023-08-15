@@ -31,6 +31,7 @@
 #include <thread>
 #include <iomanip>
 
+#include <cmath>
 #include <list>
 #include <iostream>
 #include <regex>
