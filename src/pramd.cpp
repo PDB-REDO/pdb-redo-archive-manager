@@ -374,6 +374,7 @@ int a_main(int argc, char *const argv[])
 	config.init(
 		"usage: pramd [options] command",
 		mcfp::make_option("help,h", "Display help message"),
+		mcfp::make_option("version", "Show version information"),
 		mcfp::make_option("verbose,v", "Verbose output"),
 		mcfp::make_option("no-daemon,F", "Do not fork into background"),
 		mcfp::make_option<std::string>("pdb-redo-dir", "Directory containing PDB-REDO server data"),

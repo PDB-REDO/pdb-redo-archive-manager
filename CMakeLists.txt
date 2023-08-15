@@ -25,7 +25,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 # set the project name
-project(pdb-redo-archive-manager VERSION 1.0.0 LANGUAGES CXX)
+project(pdb-redo-archive-manager VERSION 1.0.1 LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -101,6 +101,8 @@ find_package(zeep 5.1.4 REQUIRED)
 find_package(gxrio REQUIRED)
 find_package(libpqxx 7.8 REQUIRED)
 
+pkg_check_modules(PQ REQUIRED IMPORTED_TARGET libpq)
+
 # As long as C++20 is not fully implemented (and used)
 find_package(date REQUIRED)
 
@@ -147,7 +149,7 @@ endif()
 
 target_include_directories(pramd PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR} ${PQ_INCLUDE_DIRS})
 target_link_libraries(pramd	-static-libgcc -static-libstdc++
-	date::date zeep::zeep std::filesystem LibArchive::LibArchive ${REQUIRED_LIBRARIES} gxrio::gxrio libpqxx::pqxx)
+	date::date zeep::zeep std::filesystem LibArchive::LibArchive ${REQUIRED_LIBRARIES} gxrio::gxrio PkgConfig::PQ libpqxx::pqxx)
 
 install(TARGETS pramd
     RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}
