@@ -274,11 +274,14 @@ void pram_html_controller::export_results(const zh::request &request, const zh::
 		{ "entries", {} }
 	};
 
-	Query q;
-	from_element(jq, q);
+	if (not jq.empty())
+	{
+		Query q;
+		from_element(jq, q);
 
-	auto dbentries = ds.query(q, 0, std::numeric_limits<uint32_t>::max());
-	to_element(content["entries"], dbentries);
+		auto dbentries = ds.query(q, 0, std::numeric_limits<uint32_t>::max());
+		to_element(content["entries"], dbentries);
+	}
 
 	std::unique_ptr<std::iostream> os(new std::stringstream);
 
