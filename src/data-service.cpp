@@ -66,7 +66,7 @@ data_service::data_service()
 	// mrsrc::istream schema_s("data.json.schema");
 	// if (not schema_s)
 	// 	throw std::runtime_error("Missing resource");
-	std::ifstream scheme_s(m_pdb_redo_dir / "schema" / "data.json.schema");
+	std::ifstream schema_s(m_pdb_redo_dir / "schema" / "data.json.schema");
 	if (not schema_s.is_open())
 		throw std::runtime_error("Missing data.json schema file");
 
