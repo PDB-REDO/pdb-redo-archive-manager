@@ -63,9 +63,12 @@ data_service::data_service()
 	m_pdb_redo_dir = config.get("pdb-redo-dir");
 
 	// the data.json schema
-	mrsrc::istream schema_s("data.json.schema");
-	if (not schema_s)
-		throw std::runtime_error("Missing resource");
+	// mrsrc::istream schema_s("data.json.schema");
+	// if (not schema_s)
+	// 	throw std::runtime_error("Missing resource");
+	std::ifstream scheme_s(m_pdb_redo_dir / "schema" / "data.json.schema");
+	if (not schema_s.is_open())
+		throw std::runtime_error("Missing data.json schema file");
 
 	zeep::json::element schema;
 	parse_json(schema_s, schema);
