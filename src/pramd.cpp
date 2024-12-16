@@ -261,8 +261,8 @@ void pram_html_controller::export_results(const zh::request &request, const zh::
 	parse_json(request.get_parameter("query"), jq);
 
     auto tp = system_clock::now();
-    auto dp = floor<days>(tp);
-    auto ymd = year_month_day{dp};
+    auto dp = date::floor<date::days>(tp);
+    auto ymd = date::year_month_day{dp};
     auto time = make_time(floor<seconds>(tp-dp));
 
 	std::ostringstream ss;

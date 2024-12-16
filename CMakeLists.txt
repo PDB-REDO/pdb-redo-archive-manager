@@ -25,7 +25,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 # set the project name
-project(pdb-redo-archive-manager VERSION 1.0.1 LANGUAGES CXX)
+project(pdb-redo-archive-manager VERSION 1.0.2 LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -39,10 +39,15 @@ include(FindPkgConfig)
 include(GenerateExportHeader)
 
 set(CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Filesystem REQUIRED)
+
+# FindBoost, take care of it now.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.30)
+	cmake_policy(SET CMP0167 NEW)
+endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers")
