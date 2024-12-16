@@ -260,6 +260,9 @@ void pram_html_controller::export_results(const zh::request &request, const zh::
 	json jq;
 	parse_json(request.get_parameter("query"), jq);
 
+	if (jq.empty())
+		throw zh::unprocessable_entity;
+
     auto tp = system_clock::now();
     auto dp = date::floor<date::days>(tp);
     auto ymd = date::year_month_day{dp};
