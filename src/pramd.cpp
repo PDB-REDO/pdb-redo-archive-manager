@@ -260,9 +260,12 @@ void pram_html_controller::export_results(const zh::request &request, const zh::
 	json jq;
 	parse_json(request.get_parameter("query"), jq);
 
+	if (jq.empty())
+		throw zh::unprocessable_entity;
+
     auto tp = system_clock::now();
-    auto dp = floor<days>(tp);
-    auto ymd = year_month_day{dp};
+    auto dp = date::floor<date::days>(tp);
+    auto ymd = date::year_month_day{dp};
     auto time = make_time(floor<seconds>(tp-dp));
 
 	std::ostringstream ss;
@@ -379,6 +382,7 @@ int a_main(int argc, char *const argv[])
 		mcfp::make_option("help,h", "Display help message"),
 		mcfp::make_option("version", "Show version information"),
 		mcfp::make_option("verbose,v", "Verbose output"),
+		mcfp::make_option<std::string>("config", "Configuration file to use"),
 		mcfp::make_option("no-daemon,F", "Do not fork into background"),
 		mcfp::make_option<std::string>("pdb-redo-dir", "Directory containing PDB-REDO server data"),
 		mcfp::make_option<std::string>("runs-dir", "Directory containing PDB-REDO server run directories"),
